@@ -1,0 +1,64 @@
+version: "3.9" # optional since v1.27.0
+services:
+  grisera_api_mongodb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - mongodb
+    ports:
+      - "18085:80"
+    environment:
+      - MONGO_API_HOST=user:password@mongodb
+      - MONGO_API_PORT=27017
+      - TIMEOUT=300
+
+  frontend-ms:
+    image: maczomen/grisera_ui:latest
+    depends_on:
+      - auth-ms
+      - grisera_api_mongodb
+    ports:
+      - "8080:8080"
+    environment:
+      - VUE_APP_AUTH_MS_URL=http://localhost:8081/api
+
+  auth-ms:
+    image: maczomen/grisera_auth:latest
+    depends_on:
+      - mongodb
+    ports:
+      - "8081:3000"
+    environment:
+      - JWT_SECRET=jwtsecret
+      - DB_URL=mongodb://user:password@mongodb:27017/auth?authSource=admin
+      - DB_NAME=auth
+
+  mongodb:
+    image: mongo
+    restart: always
+    volumes:
+      - mongodbdata:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=user
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=auth
+
+  mongodb-show:
+    image: mongo-express
+    ports:
+      - "8084:8081"
+    depends_on:
+      - mongodb
+    restart: always
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_BASICAUTH_USERNAME: user
+      ME_CONFIG_BASICAUTH_PASSWORD: password
+      ME_CONFIG_MONGODB_AUTH_DATABASE: admin
+      ME_CONFIG_MONGODB_ADMINUSERNAME: user
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+
+volumes:
+  mongodbdata:
