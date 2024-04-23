@@ -4,7 +4,7 @@ from grisera import NotFoundByIdModel
 from grisera import RecordingIn
 from grisera import RegisteredChannelIn
 from grisera import RegisteredDataIn
-from grisera import ChannelIn, Type
+from grisera import ChannelIn, ChannelType
 from mongo_service.mongodb_api_config import mongo_api_host, mongo_api_port
 from services.mongo_service import service as mongo_service
 from unittest import TestCase
@@ -12,7 +12,7 @@ from unittest import TestCase
 class TestMongoRegisteredData(TestCase):
     def generate_channel(self):
         service = mongo_service.get_service_factory().get_channel_service()
-        return service.save_channel(ChannelIn(type=Type.audio))
+        return service.save_channel(ChannelIn(type=ChannelType.audio))
 
     def generate_registered_data(self):
         service = mongo_service.get_service_factory().get_registered_data_service()

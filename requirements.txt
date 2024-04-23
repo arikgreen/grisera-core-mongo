@@ -7,4 +7,4 @@ mongomock~=4.1.2
 pymongo~=4.3.3
 pydantic~=1.10.6
 starlette~=0.26.1
-grisera==0.0.15
+grisera==0.0.16

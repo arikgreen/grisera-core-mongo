@@ -4,7 +4,7 @@ import mongomock
 
 from grisera import RecordingIn
 from grisera import NotFoundByIdModel
-from grisera import ChannelIn, Type
+from grisera import ChannelIn, ChannelType
 from grisera import RegisteredChannelIn
 from mongo_service.mongodb_api_config import mongo_api_host, mongo_api_port
 from services.mongo_service import service
@@ -14,7 +14,7 @@ class TestMongoChannel(TestCase):
     @mongomock.patch(servers=((mongo_api_host, mongo_api_port),))
     def test_save(self):
         channel_service = service.get_service_factory().get_channel_service()
-        channel = ChannelIn(type=Type.audio)
+        channel = ChannelIn(type=ChannelType.audio)
         created_channel = channel_service.save_channel(channel)
 
         self.assertEqual(created_channel.type, channel.type)
@@ -22,7 +22,7 @@ class TestMongoChannel(TestCase):
     @mongomock.patch(servers=((mongo_api_host, mongo_api_port),))
     def test_get(self):
         channel_service = service.get_service_factory().get_channel_service()
-        channel = ChannelIn(type=Type.audio)
+        channel = ChannelIn(type=ChannelType.audio)
         created_channel = channel_service.save_channel(channel)
         fetched_channel = channel_service.get_channel(created_channel.id)
 
@@ -31,7 +31,7 @@ class TestMongoChannel(TestCase):
     @mongomock.patch(servers=((mongo_api_host, mongo_api_port),))
     def test_get_many(self):
         channel_service = service.get_service_factory().get_channel_service()
-        channel = ChannelIn(type=Type.audio)
+        channel = ChannelIn(type=ChannelType.audio)
         created_channel = channel_service.save_channel(channel)
         result = channel_service.get_channels()
         fetched_channels_ids = [channel.id for channel in result.channels]
@@ -43,7 +43,7 @@ class TestMongoChannel(TestCase):
         channel_service = service.get_service_factory().get_channel_service()
         registered_channel_service = service.get_service_factory().get_registered_channel_service()
 
-        channel = ChannelIn(type=Type.audio)
+        channel = ChannelIn(type=ChannelType.audio)
         created_channel = channel_service.save_channel(channel)
         registered_channels_count = 10
         created_registered_channels = []
@@ -55,7 +55,7 @@ class TestMongoChannel(TestCase):
             created_registered_channels.append(created_rc)
 
         # create registered channels related to other channel
-        other_channel = channel_service.save_channel(ChannelIn(type=Type.audio))
+        other_channel = channel_service.save_channel(ChannelIn(type=ChannelType.audio))
         for _ in range(5):
             unrelated_registered_channel = RegisteredChannelIn(
                 channel_id=other_channel.id
@@ -77,7 +77,7 @@ class TestMongoChannel(TestCase):
     @mongomock.patch(servers=((mongo_api_host, mongo_api_port),))
     def test_traverse_two(self):
         channel_service = service.get_service_factory().get_channel_service()
-        channel = ChannelIn(type=Type.audio)
+        channel = ChannelIn(type=ChannelType.audio)
         created_channel = channel_service.save_channel(channel)
 
         registered_channel = RegisteredChannelIn(channel_id=created_channel.id)

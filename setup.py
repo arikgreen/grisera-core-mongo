@@ -2,7 +2,7 @@ from grisera import ActivityIn, Activity
 from grisera import ActivityService
 from grisera import ArrangementIn, Arrangement
 from grisera import ArrangementService
-from grisera import ChannelIn, Type
+from grisera import ChannelIn, ChannelType
 from grisera import ChannelService
 from grisera import LifeActivityIn, LifeActivity
 from grisera import LifeActivityService
@@ -34,7 +34,7 @@ class SetupNodes:
         channel_service = ChannelService()
         created_types = [channel.type for channel in channel_service.get_channels().channels]
         [channel_service.save_channel(ChannelIn(type=channel_type.value))
-         for channel_type in Type
+         for channel_type in ChannelType
          if channel_type.value not in created_types]
 
 
