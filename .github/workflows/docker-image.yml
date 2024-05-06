@@ -64,7 +64,7 @@ jobs:
         id: version_bump
         uses: anothrNick/github-tag-action@1.61.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.THIS_GITHUB_TOKEN }}
           DEFAULT_BRANCH: main
           DEFAULT_BUMP: minor
           WITH_V: true
