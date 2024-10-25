@@ -4,6 +4,7 @@ from activity_execution.activity_execution_service_mongodb import (
 )
 from appearance.appearance_service_mongodb import AppearanceServiceMongoDB
 from arrangement.arrangement_service_mongodb import ArrangementServiceMongoDB
+from dataset.dataset_service_mongodb import DatasetServiceMongoDB
 from experiment.experiment_service_mongodb import ExperimentServiceMongoDB
 from observable_information.observable_information_service_mongodb import (
     ObservableInformationServiceMongoDB,
@@ -49,10 +50,12 @@ from grisera import RegisteredChannelService
 from grisera import RegisteredDataService
 from grisera import ScenarioService
 from grisera import TimeSeriesService
+from grisera import DatasetService
 
 
 class MongoServiceFactory(ServiceFactory):
     def __init__(self):
+        self.database_service = DatasetServiceMongoDB()
         self.channel_service = ChannelServiceMongoDB()
         self.recording_service = RecordingServiceMongoDB()
         self.registered_channel_service = RegisteredChannelServiceMongoDB()
@@ -99,6 +102,9 @@ class MongoServiceFactory(ServiceFactory):
         for first_service_name, second_service_name in service_pairs:
             self._pair_services(first_service_name, second_service_name)
 
+    def get_dataset_service(self) -> DatasetService:
+        return self.database_service
+
     def get_activity_service(self) -> ActivityService:
         return self.activity_service
 
@@ -136,7 +142,7 @@ class MongoServiceFactory(ServiceFactory):
         return self.participant_service
 
     def get_participant_state_service(self) -> ParticipantStateService:
-        return self.participant_state_service
+       return self.participant_state_service
 
     def get_participation_service(self) -> ParticipationService:
         return self.participation_service

@@ -1,4 +1,4 @@
-from grisera import ActivityIn
+from grisera import ActivityIn, DatasetIn
 from grisera import (
     ActivityExecutionPropertyIn,
     ActivityExecutionRelationIn,
@@ -38,7 +38,10 @@ from grisera import (
     BasicRegisteredChannelOut,
 )
 from grisera import RegisteredDataIn
-from grisera import ScenarioIn
+from grisera import (
+    ScenarioIn,
+    ScenarioOut,
+)
 from grisera import (
     TimeSeriesPropertyIn,
     TimeSeriesRelationIn,
@@ -56,6 +59,7 @@ class.
 
 
 class Collections(str, Enum):
+    DATASET = "dataset"
     ACTIVITY = "activities"
     ACTIVITY_EXECUTION = "activity_executions"
     APPEARANCE = "appearances"
@@ -79,6 +83,7 @@ class Collections(str, Enum):
 
 
 SUPERCLASSES_TO_COLLECTION_NAMES = {
+    DatasetIn: Collections.DATASET,
     ActivityIn: Collections.ACTIVITY,
     ActivityExecutionPropertyIn: Collections.ACTIVITY_EXECUTION,
     ActivityExecutionRelationIn: Collections.ACTIVITY_EXECUTION,
@@ -108,6 +113,7 @@ SUPERCLASSES_TO_COLLECTION_NAMES = {
     RegisteredChannelIn: Collections.REGISTERED_CHANNEL,
     RegisteredDataIn: Collections.REGISTERED_DATA,
     ScenarioIn: Collections.SCENARIO,
+    ScenarioOut: Collections.SCENARIO,
     TimeSeriesPropertyIn: Collections.TIME_SERIES,
     TimeSeriesRelationIn: Collections.TIME_SERIES,
 }

@@ -35,7 +35,7 @@ class ParticipationServiceMongoDB(ParticipationService, GenericMongoServiceMixin
         self.participant_state_service: ParticipantStateService = None
         self.recording_service: RecordingService = None
 
-    def save_participation(self, participation: ParticipationIn):
+    def save_participation(self, participation: ParticipationIn, dataset_id: Union[int, str]):
         """
         Send request to mongo api to create new participation
 
@@ -47,33 +47,33 @@ class ParticipationServiceMongoDB(ParticipationService, GenericMongoServiceMixin
         """
 
         if not self._check_related_activity_execution(
-            participation.activity_execution_id
+            participation.activity_execution_id, dataset_id
         ):
             return ParticipationOut(
                 errors={"errors": "given activity execution does not exist"}
             )
 
         if not self._check_related_participant_state(
-            participation.participant_state_id
+            participation.participant_state_id, dataset_id
         ):
             return ParticipationOut(
                 errors={"errors": "given participant state does not exist"}
             )
 
-        return self.create(participation)
+        return self.create(participation, dataset_id)
 
-    def get_participations(self, query: dict = {}):
+    def get_participations(self, dataset_id: Union[int, str], query: dict = {}):
         """
         Send request to mongo api to get participations
         Returns:
             Result of request as list of participation objects
         """
-        results_dict = self.get_multiple(query)
+        results_dict = self.get_multiple(dataset_id, query)
         results = [BasicParticipationOut(**result) for result in results_dict]
         return ParticipationsOut(participations=results)
 
     def get_participation(
-        self, participation_id: Union[int, str], depth: int = 0, source: str = ""
+        self, participation_id: Union[int, str], dataset_id: Union[int, str], depth: int = 0, source: str = ""
     ):
         """
         Send request to mongo api to get given participation
@@ -85,9 +85,9 @@ class ParticipationServiceMongoDB(ParticipationService, GenericMongoServiceMixin
         Returns:
             Result of request as participation object
         """
-        return self.get_single(participation_id, depth, source)
+        return self.get_single(participation_id, dataset_id, depth, source)
 
-    def delete_participation(self, participation_id: Union[int, str]):
+    def delete_participation(self, participation_id: Union[int, str], dataset_id: Union[int, str]):
         """
         Send request to mongo api to delete given participation
         Args:
@@ -95,10 +95,10 @@ class ParticipationServiceMongoDB(ParticipationService, GenericMongoServiceMixin
         Returns:
             Result of request as participation object
         """
-        return self.delete(participation_id)
+        return self.delete(participation_id, dataset_id)
 
     def update_participation_relationships(
-        self, participation_id: Union[int, str], participation: ParticipationIn
+        self, participation_id: Union[int, str], participation: ParticipationIn, dataset_id: Union[int, str]
     ):
         """
         Send request to mongo api to update given participation relationships
@@ -108,17 +108,17 @@ class ParticipationServiceMongoDB(ParticipationService, GenericMongoServiceMixin
         Returns:
             Result of request as participation object
         """
-        existing_participation = self.get_participation(participation_id)
+        existing_participation = self.get_participation(participation_id, dataset_id)
 
         if not self._check_related_participant_state(
-            participation.participant_state_id
+            participation.participant_state_id, dataset_id
         ):
             return ParticipationOut(
                 errors={"errors": "given participant state does not exist"}
             )
 
         if not self._check_related_activity_execution(
-            participation.activity_execution_id
+            participation.activity_execution_id, dataset_id
         ):
             return ParticipationOut(
                 errors={"errors": "given activity execution does not exist"}
@@ -128,42 +128,44 @@ class ParticipationServiceMongoDB(ParticipationService, GenericMongoServiceMixin
             participation.activity_execution_id
         )
         existing_participation.participant_state_id = participation.participant_state_id
-        self.update(participation_id, existing_participation)
+        self.update(participation_id, existing_participation, dataset_id)
 
-        return self.get_participation(participation_id)
+        return self.get_participation(participation_id, dataset_id)
 
-    def _check_related_participant_state(self, participant_state_id):
+    def _check_related_participant_state(self, participant_state_id, dataset_id: Union[int, str]):
         related_participant_state = (
-            self.participant_state_service.get_participant_state(participant_state_id)
+            self.participant_state_service.get_participant_state(participant_state_id, dataset_id)
         )
-        participant_state_exists = related_participant_state is not NotFoundByIdModel
+        participant_state_exists = type(related_participant_state) is not NotFoundByIdModel
         return participant_state_id is None or participant_state_exists
 
-    def _check_related_activity_execution(self, activity_execution_id):
+    def _check_related_activity_execution(self, activity_execution_id, dataset_id: Union[int, str]):
         related_activity_execution = (
             self.activity_execution_service.get_activity_execution(
-                activity_execution_id
+                activity_execution_id,
+                dataset_id
             )
         )
-        activity_execution_exists = related_activity_execution is not NotFoundByIdModel
+        activity_execution_exists = type(related_activity_execution) is not NotFoundByIdModel
         return activity_execution_id is None or activity_execution_exists
 
-    def _add_related_documents(self, participation: dict, depth: int, source: str):
+    def _add_related_documents(self, participation: dict, dataset_id: Union[int, str], depth: int, source: str):
         if depth > 0:
-            self._add_related_recordings(participation, depth, source)
-            self._add_related_participant_state(participation, depth, source)
-            self._add_related_activity_executions(participation, depth, source)
+            self._add_related_recordings(participation, dataset_id, depth, source)
+            self._add_related_participant_state(participation, dataset_id, depth, source)
+            self._add_related_activity_executions(participation, dataset_id, depth, source)
 
-    def _add_related_recordings(self, participation: dict, depth: int, source: str):
+    def _add_related_recordings(self, participation: dict, dataset_id: Union[int, str], depth: int, source: str):
         if source != Collections.RECORDING:
             participation["recordings"] = self.recording_service.get_multiple(
+                dataset_id,
                 {"participation_id": participation["id"]},
                 depth=depth - 1,
                 source=Collections.PARTICIPATION,
             )
 
     def _add_related_participant_state(
-        self, participation: dict, depth: int, source: str
+        self, participation: dict, dataset_id: Union[int, str], depth: int, source: str
     ):
         has_related_ps = participation["participant_state_id"] is not None
         if source != Collections.PARTICIPANT_STATE and has_related_ps:
@@ -171,19 +173,21 @@ class ParticipationServiceMongoDB(ParticipationService, GenericMongoServiceMixin
                 "participant_state"
             ] = self.participant_state_service.get_single_dict(
                 participation["participant_state_id"],
+                dataset_id,
                 depth=depth - 1,
                 source=Collections.PARTICIPATION,
             )
 
     def _add_related_activity_executions(
-        self, participation: dict, depth: int, source: str
+        self, participation: dict, dataset_id: Union[int, str], depth: int, source: str
     ):
         has_related_ae = participation["activity_execution_id"] is not None
-        if source != Collections.ACTIVITY_EXECUTION and has_related_ae:
+        if source != Collections.ACTIVITY_EXECUTION and source != Collections.EXPERIMENT and has_related_ae:
             participation[
                 "activity_execution"
             ] = self.activity_execution_service.get_single_dict(
                 participation["activity_execution_id"],
+                dataset_id,
                 depth=depth - 1,
                 source=Collections.ACTIVITY_EXECUTION,
             )

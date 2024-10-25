@@ -37,7 +37,7 @@ class ObservableInformationServiceMongoDB(
         self.time_series_service = None
 
     def save_observable_information(
-        self, observable_information: ObservableInformationIn
+        self, observable_information: ObservableInformationIn, dataset_id: Union[int, str]
     ):
         """
         Send request to mongo api to create new observable information. Saving is performed by
@@ -52,7 +52,7 @@ class ObservableInformationServiceMongoDB(
             Result of request as observable information object
         """
         related_recording = self.recording_service.get_recording(
-            observable_information.recording_id
+            observable_information.recording_id, dataset_id
         )
         related_recording_exists = type(related_recording) is not NotFoundByIdModel
         if not related_recording_exists:
@@ -61,9 +61,9 @@ class ObservableInformationServiceMongoDB(
             )
 
         related_modality = self.modality_service.get_modality(
-            observable_information.modality_id
+            observable_information.modality_id, dataset_id
         )
-        related_modality_exists = related_modality is not NotFoundByIdModel
+        related_modality_exists = type(related_modality) is not NotFoundByIdModel
         if (
             observable_information.modality_id is not None
             and not related_modality_exists
@@ -73,9 +73,9 @@ class ObservableInformationServiceMongoDB(
             )
 
         related_life_activity = self.life_activity_service.get_life_activity(
-            observable_information.life_activity_id
+            observable_information.life_activity_id, dataset_id
         )
-        related_life_activity_exists = related_life_activity is not NotFoundByIdModel
+        related_life_activity_exists = type(related_life_activity) is not NotFoundByIdModel
         if (
             observable_information.life_activity_id is not None
             and not related_life_activity_exists
@@ -84,13 +84,10 @@ class ObservableInformationServiceMongoDB(
                 errors={"errors": "given life activity does not exist"}
             )
 
-        basic_oi = self.recording_service.add_observable_information(
-            observable_information
-        )
-        return ObservableInformationOut(**basic_oi.dict())
+        return self.recording_service.add_observable_information(observable_information, dataset_id)
 
     def get_multiple(
-        self, query: dict = {}, depth: int = 0, source: str = "", *args, **kwargs
+        self, dataset_id: Union[int, str], query: dict = {}, depth: int = 0, source: str = "", *args, **kwargs
     ):
         """
         Get multiple observable informations based on query. Query has to be adjusted, as observable
@@ -101,6 +98,7 @@ class ObservableInformationServiceMongoDB(
             for field, value in query.items()
         }
         recording_results = self.recording_service.get_multiple(
+            dataset_id,
             recording_query,
             depth=depth - 1,
             source=Collections.OBSERVABLE_INFORMATION,
@@ -108,24 +106,26 @@ class ObservableInformationServiceMongoDB(
         )
         result = []
         for recording_result in recording_results:
-            observable_informations = recording_result["observable_informations"]
-            del recording_result["observable_informations"]
-            for observable_information in observable_informations:
-                self._add_related_documents(
-                    observable_information,
-                    depth,
-                    source,
-                    recording_result,
-                )
-            result += observable_informations
+            if "observable_informations" in recording_result:
+                observable_informations = recording_result["observable_informations"]
+                del recording_result["observable_informations"]
+                for observable_information in observable_informations:
+                    self._add_related_documents(
+                        observable_information,
+                        dataset_id,
+                        depth,
+                        source,
+                        recording_result,
+                    )
+                result += observable_informations
 
         return result
 
-    def get_observable_informations(self):
+    def get_observable_informations(self, dataset_id: Union[int, str]):
         """
         Send request to mongo api to get all observable informations.
         """
-        observable_information_dicts = self.get_multiple()
+        observable_information_dicts = self.get_multiple(dataset_id)
         results = [
             BasicObservableInformationOut(**result)
             for result in observable_information_dicts
@@ -133,7 +133,7 @@ class ObservableInformationServiceMongoDB(
         return ObservableInformationsOut(observable_informations=results)
 
     def get_single_dict(
-        self, id: Union[str, int], depth: int = 0, source: str = "", *args, **kwargs
+        self, id: Union[str, int], dataset_id: Union[int, str], depth: int = 0, source: str = "", *args, **kwargs
     ):
         """
         Get observable information dict. Observable information is fetched from its
@@ -141,6 +141,7 @@ class ObservableInformationServiceMongoDB(
         """
         observable_information_object_id = ObjectId(id)
         recording_result = self.recording_service.get_multiple(
+            dataset_id,
             {
                 f"{Collections.OBSERVABLE_INFORMATION}.id": observable_information_object_id
             },
@@ -164,17 +165,17 @@ class ObservableInformationServiceMongoDB(
         ][0]
         del related_recording[Collections.OBSERVABLE_INFORMATION]
         self._add_related_documents(
-            observable_information_dict, depth, source, related_recording
+            observable_information_dict, dataset_id, depth, source, related_recording
         )
         return observable_information_dict
 
     def get_single(
-        self, id: Union[str, int], depth: int = 0, source: str = "", *args, **kwargs
+        self, id: Union[str, int], dataset_id: Union[int, str], depth: int = 0, source: str = "", *args, **kwargs
     ):
         """
         Get single observable information object.
         """
-        result = self.get_single_dict(id, depth, source, *args, **kwargs)
+        result = self.get_single_dict(id, dataset_id, depth, source, *args, **kwargs)
         if type(result) is NotFoundByIdModel:
             return result
         return ObservableInformationOut(**result)
@@ -182,6 +183,7 @@ class ObservableInformationServiceMongoDB(
     def get_observable_information(
         self,
         observable_information_id: Union[str, int],
+        dataset_id: Union[int, str],
         depth: int = 0,
         source: str = "",
     ):
@@ -195,9 +197,9 @@ class ObservableInformationServiceMongoDB(
         Returns:
             Result of request as observable information object
         """
-        return self.get_single(observable_information_id, depth, source)
+        return self.get_single(observable_information_id, dataset_id, depth, source)
 
-    def delete_observable_information(self, observable_information_id: Union[str, int]):
+    def delete_observable_information(self, observable_information_id: Union[str, int], dataset_id: Union[int, str]):
         """
         Send request to mongo api to delete given observable information. Removal is performed by recording service,
         as observable information is embedded within recording
@@ -207,7 +209,8 @@ class ObservableInformationServiceMongoDB(
             Result of request as observable information object
         """
         observable_information = self.get_observable_information(
-            observable_information_id
+            observable_information_id,
+            dataset_id
         )
         if type(observable_information) is NotFoundByIdModel:
             return NotFoundByIdModel(
@@ -215,13 +218,14 @@ class ObservableInformationServiceMongoDB(
                 errors={"errors": "observable information not found"},
             )
         return self.recording_service.remove_observable_information(
-            observable_information
+            observable_information, dataset_id
         )
 
     def update_observable_information_relationships(
         self,
         observable_information_id: Union[str, int],
-        observable_information: BasicObservableInformationOut,
+        observable_information: ObservableInformationIn,
+        dataset_id: Union[int, str],
     ):
         """
         Send request to mongo api to update given observable information
@@ -231,44 +235,50 @@ class ObservableInformationServiceMongoDB(
         Returns:
             Result of request as observable information object
         """
+        existing_observable_information = self.get_observable_information(observable_information_id, dataset_id)
+        for field, value in observable_information.dict().items():
+            setattr(existing_observable_information, field, value)
+
         return self.recording_service.update_observable_information(
-            observable_information_id, observable_information.dict()
+            observable_information_id, existing_observable_information.dict(), dataset_id
         )
 
     def _add_related_documents(
         self,
         observable_information: dict,
+        dataset_id: Union[int, str],
         depth: int,
         source: str,
         recording: dict,
     ):
         """Recording is taken from previous get query"""
         if depth > 0:
-            self._add_related_time_series(observable_information, depth, source)
-            self._add_related_modalities(observable_information, depth, source)
-            self._add_related_life_activities(observable_information, depth, source)
-            self._add_recording(observable_information, depth, source, recording)
+            self._add_related_time_series(observable_information, dataset_id, depth, source)
+            self._add_related_modalities(observable_information, dataset_id, depth, source)
+            self._add_related_life_activities(observable_information, dataset_id, depth, source)
+            self._add_recording(observable_information, dataset_id, depth, source, recording)
 
     def _add_recording(
-        self, observable_information: dict, depth: int, source: str, recording: dict
+        self, observable_information: dict, dataset_id: Union[int, str], depth: int, source: str, recording: dict
     ):
         """Recording has already been added related documents"""
         if source != Collections.RECORDING:
             observable_information["recording"] = recording
 
     def _add_related_modalities(
-        self, observable_information: dict, depth: int, source: str
+        self, observable_information: dict, dataset_id: Union[int, str], depth: int, source: str
     ):
         has_related_modality = observable_information["modality_id"] is not None
         if source != Collections.MODALITY and has_related_modality:
             observable_information["modality"] = self.modality_service.get_single_dict(
                 observable_information["modality_id"],
+                dataset_id,
                 depth=depth - 1,
                 source=Collections.OBSERVABLE_INFORMATION,
             )
 
     def _add_related_life_activities(
-        self, observable_information: dict, depth: int, source: str
+        self, observable_information: dict, dataset_id: Union[int, str], depth: int, source: str
     ):
         has_related_la = observable_information["life_activity_id"] is not None
         if source != Collections.LIFE_ACTIVITY and has_related_la:
@@ -276,18 +286,20 @@ class ObservableInformationServiceMongoDB(
                 "life_activity"
             ] = self.life_activity_service.get_single_dict(
                 observable_information["life_activity_id"],
+                dataset_id,
                 depth=depth - 1,
                 source=Collections.OBSERVABLE_INFORMATION,
             )
 
     def _add_related_time_series(
-        self, observable_information: dict, depth: int, source: str
+        self, observable_information: dict, dataset_id: Union[int, str], depth: int, source: str
     ):
         if source != Collections.TIME_SERIES:
             observable_information[
                 "timeSeries"
             ] = self.time_series_service.get_time_series_for_observable_information(
                 observable_information_id=observable_information["id"],
+                dataset_id=dataset_id,
                 depth=depth - 1,
                 source=Collections.OBSERVABLE_INFORMATION,
             )
@@ -295,8 +307,7 @@ class ObservableInformationServiceMongoDB(
     @staticmethod
     def _get_recording_projection(query):
         return {
-            "observable_informations": {"$elemMatch": query},
-            "observable_informations": 1,
+            "observable_informations": {"$elemMatch": query} if query else 1,
             "additional_properties": 1,
             "participation_id": 1,
             "registered_channel_id": 1,

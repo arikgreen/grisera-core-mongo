@@ -7,11 +7,11 @@ name: Docker deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "development_1.x" ]
     # Publish semver tags as releases.
     tags: [ 'v*.*.*' ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "development_1.x" ]
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -65,7 +65,7 @@ jobs:
         uses: anothrNick/github-tag-action@1.61.0
         env:
           GITHUB_TOKEN: ${{ secrets.THIS_GITHUB_TOKEN }}
-          DEFAULT_BRANCH: main
+          DEFAULT_BRANCH: ${{ github.ref_name }}
           DEFAULT_BUMP: minor
           WITH_V: true
 

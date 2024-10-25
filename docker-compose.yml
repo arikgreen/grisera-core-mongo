@@ -6,6 +6,7 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - mongodb
+      - mongodb-show
     ports:
       - "18085:80"
     environment:
@@ -14,14 +15,15 @@ services:
       - TIMEOUT=300
 
   frontend-ms:
-    image: maczomen/grisera_ui:latest
+    image: maczomen/grisera_ui:0.4.5
     depends_on:
       - auth-ms
       - grisera_api_mongodb
     ports:
-      - "8080:8080"
+      - "8080:80"
     environment:
       - VUE_APP_AUTH_MS_URL=http://localhost:8081/api
+      - VUE_APP_API_URL=http://localhost:18085
 
   auth-ms:
     image: maczomen/grisera_auth:latest

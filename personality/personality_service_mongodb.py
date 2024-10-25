@@ -15,8 +15,10 @@ from grisera import (
 )
 from grisera import PersonalityService
 
+from mongo_service.service_mixins import GenericMongoServiceMixin
 
-class PersonalityServiceMongoDB(PersonalityService):
+
+class PersonalityServiceMongoDB(PersonalityService, GenericMongoServiceMixin):
     """
     Object to handle logic of personality requests
     """
@@ -24,14 +26,15 @@ class PersonalityServiceMongoDB(PersonalityService):
     def __init__(self):
         self.mongo_api_service = MongoApiService()
         self.participant_state_service: ParticipantStateService = None
-        self.model_out_class = None
+        self.model_out_class = PersonalityBigFiveOut
 
-    def save_personality_big_five(self, personality: PersonalityBigFiveIn):
+    def save_personality_big_five(self, personality: PersonalityBigFiveIn, dataset_id: Union[int, str]):
         """
         Send request to mongo api to create new personality big five model
 
         Args:
             personality (PersonalityBigFiveIn): Personality big five to be added
+            dataset_id (int | str): name of dataset
 
         Returns:
             Result of request as personality big five object
@@ -49,14 +52,15 @@ class PersonalityServiceMongoDB(PersonalityService):
             )
         self.model_out_class = PersonalityBigFiveOut
 
-        return self.create(personality)
+        return self.create(personality, dataset_id)
 
-    def save_personality_panas(self, personality: PersonalityPanasIn):
+    def save_personality_panas(self, personality: PersonalityPanasIn, dataset_id: Union[int, str]):
         """
         Send request to mongo api to create new personality panas model
 
         Args:
             personality (PersonalityPanasIn): Personality to be added
+            dataset_id (int | str): name of dataset
 
         Returns:
             Result of request as personality panas object
@@ -70,10 +74,10 @@ class PersonalityServiceMongoDB(PersonalityService):
             )
         self.model_out_class = PersonalityPanasOut
 
-        return self.create(personality)
+        return self.create(personality, dataset_id)
 
-    def get_single(self, id: Union[str, int], depth: int = 0, source: str = ""):
-        personality = self.get_single_dict(id, depth, source)
+    def get_single(self, id: Union[str, int], dataset_id: Union[int, str], depth: int = 0, source: str = ""):
+        personality = self.get_single_dict(id, dataset_id, depth, source)
         if type(personality) is NotFoundByIdModel:
             return personality
         return (
@@ -83,13 +87,14 @@ class PersonalityServiceMongoDB(PersonalityService):
         )
 
     def get_personality(
-        self, personality_id: Union[int, str], depth: int = 0, source: str = ""
+        self, personality_id: Union[int, str], dataset_id: Union[int, str], depth: int = 0, source: str = ""
     ):
         """
         Send request to mongo api to get given personality
 
         Args:
             personality_id (int | str): identity of personality
+            dataset_id (int | str): name of dataset
             depth: (int): specifies how many related entities will be traversed to create the response
             source: Helper arguments that specifies direction of collection traversion
 
@@ -97,16 +102,19 @@ class PersonalityServiceMongoDB(PersonalityService):
         Returns:
             Result of request as personality object
         """
-        return self.get_single(personality_id, depth, source)
+        return self.get_single(personality_id, dataset_id, depth, source)
 
-    def get_personalities(self, query: dict = {}):
+    def get_personalities(self, dataset_id: Union[int, str], query: dict = {}):
         """
         Send request to mongo api to get personalities
+
+        Args:
+            dataset_id (int | str): name of dataset
 
         Returns:
             Result of request as list of personalities objects
         """
-        results_dict = self.get_multiple(query)
+        results_dict = self.get_multiple(dataset_id, query)
 
         personalities = []
 
@@ -120,20 +128,21 @@ class PersonalityServiceMongoDB(PersonalityService):
 
         return PersonalitiesOut(personalities=personalities)
 
-    def delete_personality(self, personality_id: Union[int, str]):
+    def delete_personality(self, personality_id: Union[int, str], dataset_id: Union[int, str]):
         """
         Send request to mongo api to delete given personality
 
         Args:
             personality_id (int | str): identity of personality
+            dataset_id (int | str): name of dataset
 
         Returns:
             Result of request as personality object
         """
-        return self.delete(personality_id)
+        return self.delete(personality_id, dataset_id)
 
     def update_personality_big_five(
-        self, personality_id: Union[int, str], personality: PersonalityBigFiveIn
+        self, personality_id: Union[int, str], personality: PersonalityBigFiveIn, dataset_id: Union[int, str]
     ):
         """
         Send request to mongo api to update given personality big five model
@@ -141,6 +150,7 @@ class PersonalityServiceMongoDB(PersonalityService):
         Args:
             personality_id (int | str): identity of personality
             personality (PersonalityBigFiveIn): Properties to update
+            dataset_id (int | str): name of dataset
 
         Returns:
             Result of request as personality object
@@ -156,17 +166,17 @@ class PersonalityServiceMongoDB(PersonalityService):
                 **personality.dict(), errors="Value not between 0 and 1"
             )
 
-        get_response = self.get_personality(personality_id)
+        get_response = self.get_personality(personality_id, dataset_id)
         if type(get_response) is NotFoundByIdModel:
             return get_response
         if type(get_response) is PersonalityPanasOut:
             return NotFoundByIdModel(id=personality_id, errors="Node not found.")
 
-        self.mongo_api_service.update_document(personality_id, personality)
-        return self.get_personality(personality_id)
+        self.mongo_api_service.update_document(personality_id, personality, dataset_id)
+        return self.get_personality(personality_id, dataset_id)
 
     def update_personality_panas(
-        self, personality_id: Union[int, str], personality: PersonalityPanasIn
+        self, personality_id: Union[int, str], personality: PersonalityPanasIn, dataset_id: Union[int, str]
     ):
         """
         Send request to mongo api to update given personality panas model
@@ -174,6 +184,7 @@ class PersonalityServiceMongoDB(PersonalityService):
         Args:
             personality_id (int | str): identity of personality
             personality (PersonalityPanasIn): Properties to update
+            dataset_id (int | str): name of dataset
 
         Returns:
             Result of request as personality object
@@ -186,30 +197,32 @@ class PersonalityServiceMongoDB(PersonalityService):
                 **personality.dict(), errors="Value not between 0 and 1"
             )
 
-        get_response = self.get_personality(personality_id)
+        get_response = self.get_personality(personality_id, dataset_id)
         if type(get_response) is NotFoundByIdModel:
             return get_response
         if type(get_response) is PersonalityBigFiveOut:
             return NotFoundByIdModel(id=personality_id, errors="Node not found.")
 
-        self.mongo_api_service.update_document(personality_id, personality)
-        return self.get_personality(personality_id)
+        self.mongo_api_service.update_document(personality_id, personality, dataset_id)
+        return self.get_personality(personality_id, dataset_id)
 
     def _add_related_documents(
         self,
         personality: dict,
+        dataset_id: Union[int, str],
         depth: int,
         source: str,
     ):
         if depth > 0:
-            self._add_participant_states(personality, depth, source)
+            self._add_participant_states(personality, dataset_id, depth, source)
 
-    def _add_participant_states(self, personality: dict, depth: int, source: str):
+    def _add_participant_states(self, personality: dict, dataset_id: Union[int, str], depth: int, source: str):
         if source != Collections.PARTICIPANT_STATE:
             query = {"personality_ids": personality["id"]}
             personality[
                 "participant_states"
             ] = self.participant_state_service.get_multiple(
+                dataset_id,
                 query,
                 depth=depth - 1,
                 source=Collections.PERSONALITY,
