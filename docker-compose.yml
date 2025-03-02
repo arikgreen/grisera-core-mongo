@@ -22,7 +22,7 @@ services:
 
 
   frontend-ms:
-    image: ghcr.io/grisera/grisera-ui
+    image: ghcr.io/grisera/grisera-ui:2.1.4
     depends_on:
       - auth-ms
       - grisera_api_mongodb
@@ -36,7 +36,7 @@ services:
       - VUE_APP_KEYCLOAK_REALM=grisera
 
   auth-ms:
-    image: ghcr.io/grisera/grisera-auth:2.1.3
+    image: ghcr.io/grisera/grisera-auth:2.1.6
     depends_on:
       - mongodb
     ports:
@@ -50,7 +50,7 @@ services:
       - CLIENT_SECRET=1HtHJPFnsReotU6unJkkl2RHsbytXZ31
 
   keycloak:
-    image: ghcr.io/grisera/grisera-auth-keycloak:2.1.3
+    image: ghcr.io/grisera/grisera-auth-keycloak:2.1.6
     depends_on:
       - postgres
     ports:
