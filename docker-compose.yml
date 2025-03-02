@@ -6,39 +6,69 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - mongodb
-      - mongodb-show
     ports:
-      - "18085:80"
+      - "8085:80"
     environment:
-      - MONGO_API_HOST=user:password@mongodb
+      - MONGO_API_HOST=mongodb
       - MONGO_API_PORT=27017
-      - TIMEOUT=300
+      - MONGO_API_USER=user
+      - MONGO_API_PASSWORD=password
+      - KEYCLOAK_SERVER=http://keycloak:8080
+      - REALM=grisera
+      - PERMISSIONS_ENDPOINT=http://auth-ms:3000/api/permissions
+      - CLIENT_ID=grisera-api
+      - CLIENT_SECRET=6UkCrp7UqFy78vh5TVhkaYP0OuVagNTd
+      - VERIFY_ISS=False
+
 
   frontend-ms:
-    image: maczomen/grisera_ui:0.4.5
+    image: ghcr.io/grisera/grisera-ui
     depends_on:
       - auth-ms
       - grisera_api_mongodb
     ports:
-      - "8080:80"
+      - "3000:80"
     environment:
+      - VUE_APP_API_URL=http://localhost:8085
       - VUE_APP_AUTH_MS_URL=http://localhost:8081/api
-      - VUE_APP_API_URL=http://localhost:18085
+      - VUE_APP_KEYCLOAK_URL=http://localhost:8090
+      - VUE_APP_KEYCLOAK_CLIENT_ID=grisera-ui
+      - VUE_APP_KEYCLOAK_REALM=grisera
 
   auth-ms:
-    image: maczomen/grisera_auth:latest
+    image: ghcr.io/grisera/grisera-auth:2.1.3
     depends_on:
       - mongodb
     ports:
       - "8081:3000"
     environment:
-      - JWT_SECRET=jwtsecret
       - DB_URL=mongodb://user:password@mongodb:27017/auth?authSource=admin
       - DB_NAME=auth
+      - KEYCLOAK_URL=http://keycloak:8080
+      - REALM=grisera
+      - CLIENT_ID=grisera-auth
+      - CLIENT_SECRET=1HtHJPFnsReotU6unJkkl2RHsbytXZ31
+
+  keycloak:
+    image: ghcr.io/grisera/grisera-auth-keycloak:2.1.3
+    depends_on:
+      - postgres
+    ports:
+      - "8090:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: password
 
   mongodb:
     image: mongo
     restart: always
+    ports:
+      - "27017:27017"
     volumes:
       - mongodbdata:/data/db
     environment:
@@ -62,5 +92,15 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: user
       ME_CONFIG_MONGODB_ADMINPASSWORD: password
 
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+
 volumes:
   mongodbdata:
+  postgresdata:
