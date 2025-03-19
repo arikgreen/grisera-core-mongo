@@ -50,7 +50,7 @@ services:
       - CLIENT_SECRET=1HtHJPFnsReotU6unJkkl2RHsbytXZ31
 
   keycloak:
-    image: ghcr.io/grisera/grisera-auth-keycloak:2.1.6
+    image: ghcr.io/grisera/grisera-auth-keycloak:2.1.7
     depends_on:
       - postgres
     ports:
