@@ -18,7 +18,6 @@ services:
       - PERMISSIONS_ENDPOINT=http://auth-ms:3000/api/permissions
       - CLIENT_ID=grisera-api
       - CLIENT_SECRET=6UkCrp7UqFy78vh5TVhkaYP0OuVagNTd
-      - VERIFY_ISS=False
 
 
   frontend-ms:
