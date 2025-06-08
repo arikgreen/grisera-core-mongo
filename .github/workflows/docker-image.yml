@@ -4,7 +4,6 @@ name: Docker deploy
 # They are provided by a third-party and are governed by
 # separate terms of service, privacy policy, and support
 # documentation.
-
 on:
   push:
     branches: [ "development_2.1" ]
