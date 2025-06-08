@@ -19,7 +19,6 @@ services:
       - CLIENT_ID=grisera-api
       - CLIENT_SECRET=6UkCrp7UqFy78vh5TVhkaYP0OuVagNTd
 
-
   frontend-ms:
     image: ghcr.io/grisera/grisera-ui:2.1.4
     depends_on:
