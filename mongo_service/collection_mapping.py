@@ -3,6 +3,7 @@ from grisera import (
     ActivityExecutionPropertyIn,
     ActivityExecutionRelationIn,
 )
+from grisera import AdditionalParameterIn
 from grisera import (
     AppearanceOcclusionOut,
     AppearanceSomatotypeOut,
@@ -62,6 +63,7 @@ class Collections(str, Enum):
     DATASET = "dataset"
     ACTIVITY = "activities"
     ACTIVITY_EXECUTION = "activity_executions"
+    ADDITIONAL_PARAMETERS = "additional_parameters"
     APPEARANCE = "appearances"
     ARRANGEMENT = "arrangements"
     CHANNEL = "channels"
@@ -87,6 +89,7 @@ SUPERCLASSES_TO_COLLECTION_NAMES = {
     ActivityIn: Collections.ACTIVITY,
     ActivityExecutionPropertyIn: Collections.ACTIVITY_EXECUTION,
     ActivityExecutionRelationIn: Collections.ACTIVITY_EXECUTION,
+    AdditionalParameterIn: Collections.ADDITIONAL_PARAMETERS,
     AppearanceOcclusionIn: Collections.APPEARANCE,
     AppearanceOcclusionOut: Collections.APPEARANCE,
     AppearanceSomatotypeIn: Collections.APPEARANCE,

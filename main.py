@@ -1,5 +1,6 @@
 from grisera import activity_router
 from grisera import activity_execution_router
+from grisera import additional_parameter_router
 from grisera import arrangement_router
 from grisera import appearance_router
 from grisera import experiment_router
@@ -44,6 +45,7 @@ app.add_middleware(
 
 app.include_router(activity_router)
 app.include_router(activity_execution_router)
+app.include_router(additional_parameter_router)
 app.include_router(appearance_router)
 app.include_router(arrangement_router)
 app.include_router(channel_router)

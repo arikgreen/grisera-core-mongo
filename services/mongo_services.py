@@ -2,6 +2,7 @@ from activity.activity_service_mongodb import ActivityServiceMongoDB
 from activity_execution.activity_execution_service_mongodb import (
     ActivityExecutionServiceMongoDB,
 )
+from additional_parameter.additional_parameter_service_mongodb import AdditionalParameterServiceMongoDB
 from appearance.appearance_service_mongodb import AppearanceServiceMongoDB
 from arrangement.arrangement_service_mongodb import ArrangementServiceMongoDB
 from dataset.dataset_service_mongodb import DatasetServiceMongoDB
@@ -30,6 +31,7 @@ from registered_data.registered_data_service_mongodb import RegisteredDataServic
 from time_series.time_series_service_mongodb import TimeSeriesServiceMongoDB
 from grisera import ActivityService
 from grisera import ActivityExecutionService
+from grisera import AdditionalParameterService
 from grisera import AppearanceService
 from grisera import ArrangementService
 from grisera import ChannelService
@@ -55,6 +57,7 @@ from grisera import DatasetService
 
 class MongoServiceFactory(ServiceFactory):
     def __init__(self):
+        self.additional_parameter_service = AdditionalParameterServiceMongoDB()
         self.database_service = DatasetServiceMongoDB()
         self.channel_service = ChannelServiceMongoDB()
         self.recording_service = RecordingServiceMongoDB()
@@ -164,6 +167,9 @@ class MongoServiceFactory(ServiceFactory):
 
     def get_time_series_service(self) -> TimeSeriesService:
         return self.time_series_service
+
+    def get_additional_parameter_service(self) -> AdditionalParameterService:
+        return self.additional_parameter_service
 
     def _pair_services(
         self, first_service_collection_name: str, second_service_collection_name: str
