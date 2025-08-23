@@ -58,10 +58,24 @@ class ChannelServiceMongoDB(ChannelService, GenericMongoServiceMixin):
                          for depth=0, only no further models will be traversed.
             source (str): internal argument for mongo services, used to tell the direction of model fetching.
 
-    Returns:
-        Result of request as channel out class
-    """
+        Returns:
+            Result of request as channel out class
+        """
         return self.get_single(channel_id, dataset_id, depth, source)
+
+    def update_channel(self, channel_id: Union[str, int], channel: ChannelIn, dataset_id: Union[int, str]):
+        """
+        Send request to mongo api to update given channel. This method uses mixin update implementation.
+
+        Args:
+            channel_id (Union[str, int]): Id of channel
+            channel (ChannelIn): Channel data to update
+            dataset_id (int | str): name of dataset
+
+        Returns:
+            Result of request as updated channel out class
+        """
+        return self.update(channel_id, channel, dataset_id)
 
     def _add_related_documents(self, channel: dict, dataset_id: Union[int, str], depth: int, source: str):
         if source != Collections.REGISTERED_CHANNEL and depth > 0:

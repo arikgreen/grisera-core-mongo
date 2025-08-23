@@ -72,6 +72,20 @@ class LifeActivityServiceMongoDB(LifeActivityService, GenericMongoServiceMixin):
         """
         return self.get_single(life_activity_id, dataset_id, depth, source)
 
+    def update_life_activity(self, life_activity_id: Union[int, str], life_activity: LifeActivityIn, dataset_id: Union[int, str]):
+        """
+        Send request to mongo api to update given life activity. This method uses mixin update implementation.
+
+        Args:
+            life_activity_id (int | str): identity of life activity
+            life_activity (LifeActivityIn): Life activity to update
+            dataset_id (int | str): name of dataset
+
+        Returns:
+            Result of request as life activity object
+        """
+        return self.update(life_activity_id, life_activity, dataset_id)
+
     def _add_related_documents(self, life_activity: dict, dataset_id: Union[int, str], depth: int, source: str):
         if source != Collections.OBSERVABLE_INFORMATION and depth > 0:
             life_activity[

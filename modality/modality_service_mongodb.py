@@ -72,6 +72,20 @@ class ModalityServiceMongoDB(ModalityService, GenericMongoServiceMixin):
         """
         return self.get_single(modality_id, dataset_id, depth, source)
 
+    def update_modality(self, modality_id: Union[int, str], modality: ModalityIn, dataset_id: Union[int, str]):
+        """
+        Send request to mongo api to update given modality. This method uses mixin update implementation.
+
+        Args:
+            modality_id (int | str): identity of modality
+            modality (ModalityIn): Modality to update
+            dataset_id (int | str): name of dataset
+
+        Returns:
+            Result of request as modality object
+        """
+        return self.update(modality_id, modality, dataset_id)
+
     def _add_related_documents(self, modality: dict, dataset_id: Union[int, str], depth: int, source: str):
         if source != Collections.OBSERVABLE_INFORMATION and depth > 0:
             modality[
