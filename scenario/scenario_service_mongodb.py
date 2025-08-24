@@ -77,6 +77,7 @@ class ScenarioServiceMongoDB(ScenarioService, GenericMongoServiceMixin):
             scenario_dict, Collections.SCENARIO, dataset_id
         )
         scenario_dict["activity_executions"] = [activity_executions]
+        scenario_dict["id"] = created_scenario_id  # Dodaj ID do scenario_dict
         return ScenarioOut(**scenario_dict)
 
     def add_activity_execution(

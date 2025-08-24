@@ -27,6 +27,9 @@ from grisera import measure_name_router
 from grisera import channel_router
 from grisera import dataset_router
 
+from data_operations.data_import.data_import_router import data_import_router
+from data_operations.data_export.data_export_router import data_export_router
+
 app = FastAPI(
     title="GRISERA API",
     description="Graph Representation Integrating Signals for Emotion Recognition and Analysis (GRISERA) "
@@ -67,6 +70,10 @@ app.include_router(registered_data_router)
 app.include_router(scenario_router)
 app.include_router(time_series_router)
 app.include_router(dataset_router)
+
+# Dodanie routerów do importu i eksportu danych
+app.include_router(data_import_router)
+app.include_router(data_export_router)
 
 app.dependency_overrides[service.get_service_factory] = mongo_service.get_service_factory
 

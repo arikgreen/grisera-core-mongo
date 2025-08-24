@@ -69,6 +69,8 @@ class Collections(str, Enum):
     ARRANGEMENT = "arrangements"
     CHANNEL = "channels"
     EXPERIMENT = "experiments"
+    FILE_OPERATIONS = "file_operations"  # Nowa kolekcja dla operacji na plikach (import/export)
+    FILE_OPERATION_ERRORS = "file_operation_errors"  # Nowa kolekcja dla błędów operacji
     LIFE_ACTIVITY = "life_activities"
     MEASURE = "measures"
     MEASURE_NAME = "measure_names"

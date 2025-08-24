@@ -51,7 +51,28 @@ class ParticipantServiceMongoDB(ParticipantService, GenericMongoServiceMixin):
         Returns:
             Result of request as participant object
         """
-        return self.create(participant, dataset_id)
+        # Utworz uczestnika
+        created_participant = self.create(participant, dataset_id)
+        
+        # Automatycznie utworz domyslny ParticipantState dla nowego uczestnika
+        if hasattr(created_participant, 'id') and created_participant.id:
+            from grisera import ParticipantStateIn
+            # Jesli uczestnik ma external_id, użyj go do wygenerowania external_id dla stanu
+            state_external_id = None
+            if hasattr(created_participant, 'external_id') and created_participant.external_id:
+                state_external_id = f"{created_participant.external_id}_default_state"
+            
+            default_state = ParticipantStateIn(
+                participant_id=str(created_participant.id),
+                age=None,
+                personality_ids=None,
+                appearance_ids=None,
+                external_id=state_external_id,
+                additional_properties=[]
+            )
+            # self.add_participant_state(default_state, dataset_id)
+            
+        return created_participant
 
     def get_participants(self, dataset_id: Union[int, str], query: dict = {}):
         """
