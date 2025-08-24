@@ -4,6 +4,7 @@ import threading
 from data_operations.file_operations_service import FileOperationsStatusService
 from data_operations.file_operations_model import FileOperationIn, OperationType
 from data_operations.data_import.json_import_service import JsonImportService
+from data_operations.data_import.owl_import_service import OwlImportService
 
 from data_operations.file_operations_model import (
     FileOperationIn,
@@ -26,6 +27,7 @@ class DataImportServiceMongoDB(GenericMongoServiceMixin):
         super().__init__()
         self.file_ops_service = FileOperationsStatusService()
         self.json_import_service = JsonImportService()
+        self.owl_import_service = OwlImportService()
 
     def _background_import_processor(self, import_data: FileOperationIn, import_id: str):
         """
@@ -159,8 +161,9 @@ class DataImportServiceMongoDB(GenericMongoServiceMixin):
         """
         print(f"⚙️ Processing import data for type: {import_data.file_type} (Import ID: {import_id})")
         if import_data.file_type.lower() == "json":
-            print(f"📄 Processing JSON data for import ID: {import_id}...")
             return self.json_import_service.import_json_data(import_data, import_id)
+        elif import_data.file_type.lower() == "owl":
+            return self.owl_import_service.import_owl_data(import_data, import_id)
         else:
             error_msg = f"Unsupported import type: {import_data.file_type}"
             print(f"❌ {error_msg} (Import ID: {import_id})")
