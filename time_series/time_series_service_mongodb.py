@@ -1,11 +1,7 @@
 from typing import Union, Optional, List
 
 import bson
-
-from starlette.datastructures import QueryParams
-from grisera import TimeSeriesTransformationMultidimensional
-from mongo_service.collection_mapping import Collections
-from mongo_service.mongo_api_service import MongoApiService
+from grisera import NotFoundByIdModel
 from grisera import (
     TimeSeriesPropertyIn,
     BasicTimeSeriesOut,
@@ -18,11 +14,15 @@ from grisera import (
     SignalValueNodesIn,
     Type,
 )
-from grisera import NotFoundByIdModel
 from grisera import TimeSeriesService
 from grisera import (
     TimeSeriesTransformationFactory,
 )
+from grisera import TimeSeriesTransformationMultidimensional
+from starlette.datastructures import QueryParams
+
+from mongo_service.collection_mapping import Collections
+from mongo_service.mongo_api_service import MongoApiService
 
 
 class TimeSeriesServiceMongoDB(TimeSeriesService):
@@ -38,8 +38,13 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
     def __init__(self):
         self.mongo_api_service = MongoApiService()
         self.model_out_class = TimeSeriesOut
-        self.measure_service = None
-        self.observable_information_service = None
+        # Import and initialize services
+        from observable_information.observable_information_service_mongodb import ObservableInformationServiceMongoDB
+        from measure.measure_service_mongodb import MeasureServiceMongoDB
+        from time_series.time_series_repository import TimeSeriesRepository
+        self.observable_information_service = ObservableInformationServiceMongoDB()
+        self.measure_service = MeasureServiceMongoDB()
+        self.time_series_repository = TimeSeriesRepository()
 
     def save_time_series(self, time_series: TimeSeriesIn, dataset_id: Union[int, str]):
         """
@@ -53,17 +58,17 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
             Result of request as time series object
         """
         if (
-            not time_series.observable_information_ids
-            and time_series.observable_information_id
+                not time_series.observable_information_ids
+                and time_series.observable_information_id
         ):
             time_series.observable_information_ids = [
                 time_series.observable_information_id
             ]
         if (
-            time_series.observable_information_ids
-            and not self._check_related_observable_informations(
-                time_series.observable_information_ids, dataset_id
-            )
+                time_series.observable_information_ids
+                and not self._check_related_observable_informations(
+            time_series.observable_information_ids, dataset_id
+        )
         ):
             return NotFoundByIdModel(
                 errors={"errors": "given observable information does not exist"}
@@ -90,7 +95,7 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
         return self.get_time_series(created_ts_id, dataset_id)
 
     def get_multiple(
-        self, dataset_id: Union[int, str], query: dict = {}, depth: int = 0, source: str = "", query_params=None
+            self, dataset_id: Union[int, str], query: dict = {}, depth: int = 0, source: str = "", query_params=None
     ):
         results_dict = self.mongo_api_service.get_many_time_series(dataset_id, query, query_params)
 
@@ -111,13 +116,13 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
         return TimeSeriesNodesOut(time_series_nodes=results)
 
     def get_time_series(
-        self,
-        time_series_id: Union[int, str],
-        dataset_id: Union[int, str],
-        depth: int = 0,
-        signal_min_value: Optional[int] = None,
-        signal_max_value: Optional[int] = None,
-        source: str = "",
+            self,
+            time_series_id: Union[int, str],
+            dataset_id: Union[int, str],
+            depth: int = 0,
+            signal_min_value: Optional[int] = None,
+            signal_max_value: Optional[int] = None,
+            source: str = "",
     ):
         """
         Send request to graph api to get given time series
@@ -187,7 +192,7 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
         return get_response
 
     def update_time_series(
-        self, time_series_id: Union[int, str], time_series: TimeSeriesPropertyIn, dataset_id: Union[int, str]
+            self, time_series_id: Union[int, str], time_series: TimeSeriesPropertyIn, dataset_id: Union[int, str]
     ):
         """
         Send request to graph api to update given time series
@@ -207,7 +212,7 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
         return self.get_time_series(time_series_id, dataset_id)
 
     def update_time_series_relationships(
-        self, time_series_id: Union[int, str], time_series: TimeSeriesRelationIn, dataset_id: Union[int, str]
+            self, time_series_id: Union[int, str], time_series: TimeSeriesRelationIn, dataset_id: Union[int, str]
     ):
         """
         Send request to graph api to update given time series
@@ -221,8 +226,8 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
             Result of request as time series object
         """
         if (
-            not time_series.observable_information_ids
-            and time_series.observable_information_id
+                not time_series.observable_information_ids
+                and time_series.observable_information_id
         ):
             time_series.observable_information_ids = [
                 time_series.observable_information_id
@@ -233,7 +238,7 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
             return get_response
 
         if not self._check_related_observable_informations(
-            time_series.observable_information_ids, dataset_id
+                time_series.observable_information_ids, dataset_id
         ):
             return TimeSeriesOut(
                 errors={"errors": "given observable information does not exist"}
@@ -250,7 +255,7 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
         return self.get_time_series(time_series_id, dataset_id)
 
     def transform_time_series(
-        self, time_series_transformation: TimeSeriesTransformationIn, dataset_id: Union[int, str]
+            self, time_series_transformation: TimeSeriesTransformationIn, dataset_id: Union[int, str]
     ):
         """
         Send request to graph api to create new transformed time series
@@ -286,11 +291,11 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
         result = self.save_time_series(new_time_series, dataset_id)
 
     def get_time_series_for_observable_information(
-        self,
-        observable_information_id: Union[str, int],
-        dataset_id: Union[int, str],
-        depth: int = 0,
-        source: str = "",
+            self,
+            observable_information_id: Union[str, int],
+            dataset_id: Union[int, str],
+            depth: int = 0,
+            source: str = "",
     ):
         query = {"metadata.observable_information_ids": observable_information_id}
         return self.get_multiple(dataset_id, query, depth, source)
@@ -314,9 +319,7 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
         if time_series["observable_information_ids"] is None:
             return
         if source != Collections.OBSERVABLE_INFORMATION:
-            time_series[
-                "observable_informations"
-            ] = self.observable_information_service.get_multiple(
+            result = self.observable_information_service.get_multiple(
                 dataset_id,
                 {
                     "id": self.mongo_api_service.get_id_in_query(
@@ -326,6 +329,9 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
                 depth=depth - 1,
                 source=Collections.TIME_SERIES,
             )
+            time_series[
+                "observable_informations"
+            ] = result
 
     def _check_related_observable_informations(self, observable_information_ids: List, dataset_id: Union[int, str]):
         existing_observable_informations = (
@@ -342,3 +348,50 @@ class TimeSeriesServiceMongoDB(TimeSeriesService):
             observable_information_ids
         )
         return all_given_oi_exist
+
+    def get_time_series_detailed(self, dataset_id: Union[int, str],
+                                 activity_execution_id: str,
+                                 participant_id: str):
+        """
+        Get time series with full details (observable informations, measures, etc.) from database.
+        
+        This method is optimized for frontend use - returns detailed time series data
+        with all related entities included, filtered by activity execution and participant.
+        Uses database-level filtering for better performance.
+        
+        Args:
+            dataset_id (int | str): name of dataset
+            activity_execution_id (str): Filter by activity execution id (required)
+            participant_id (str): Filter by participant id (required)
+
+        Returns:
+            Result of request as list of detailed time series objects
+        """
+        from grisera import TimeSeriesNodesOut, BasicTimeSeriesOut
+
+        # OPTIMIZATION: Use repository for database-level filtering
+        filtered_ts_ids = self.time_series_repository.find_by_activity_execution_and_participant(
+            dataset_id=dataset_id,
+            activity_execution_id=activity_execution_id,
+            participant_id=participant_id
+        )
+        
+        # Get full details for each filtered time series
+        detailed_time_series = []
+        for ts_id in filtered_ts_ids:
+            if ts_id:
+                # Use the same method as get_time_series to get full details
+                full_ts = self.get_time_series(ts_id, dataset_id, depth=4)
+                if hasattr(full_ts, 'errors') and full_ts.errors is None:
+                    detailed_time_series.append(full_ts.dict())
+                    print(full_ts.dict()['observable_informations'])
+        
+        # Convert to TimeSeriesOut format (has observable_informations field)
+        time_series_nodes = []
+        for ts_dict in detailed_time_series:
+            # Use TimeSeriesOut instead of BasicTimeSeriesOut to include observable_informations
+            time_series_node = ts_dict  # Already in correct format from get_time_series()
+            time_series_nodes.append(time_series_node)
+
+        from grisera import DetailedTimeSeriesNodesOut
+        return DetailedTimeSeriesNodesOut(time_series_nodes=time_series_nodes)
