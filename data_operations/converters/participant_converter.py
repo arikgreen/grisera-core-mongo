@@ -1,22 +1,24 @@
 from typing import Dict, Any
+
 from grisera import ParticipantIn
-from .base import BaseEntityConverter, DEBUG
-from data_operations.utils import remove_prefix
+
+from data_operations.data_mappers import map_sex_value
 from mongo_service.collection_mapping import Collections
 from services.mongo_services import MongoServiceFactory
+from .base import BaseEntityConverter, DEBUG
 
 
 class ParticipantConverter(BaseEntityConverter[ParticipantIn]):
-    JSON_KEY_CANDIDATES_FOR_NAME = ["name", "hasName"] 
+    JSON_KEY_CANDIDATES_FOR_NAME = ["name", "hasName"]
     JSON_KEY_CANDIDATES_FOR_SEX = ["sex", "hasSex"]
     JSON_KEY_CANDIDATES_FOR_DOB = ["dateOfBirth", "hasDateOfBirth"]
-    JSON_KEY_CANDIDATES_FOR_DISORDER = ["disorder", "hasDisorder"] 
+    JSON_KEY_CANDIDATES_FOR_DISORDER = ["disorder", "hasDisorder"]
     DEFAULT_MAIN_FIELD_PREFIX = "Participant"
-    
+
     def __init__(self, import_id: str):
         super().__init__(import_id)
         self.services = MongoServiceFactory()
-    
+
     def convert(self, json_entity: Dict[str, Any]) -> ParticipantIn:
         external_id = self._get_external_id(json_entity)
 
@@ -27,12 +29,13 @@ class ParticipantConverter(BaseEntityConverter[ParticipantIn]):
             self.DEFAULT_MAIN_FIELD_PREFIX,
             external_id
         )
-        
+
         # Wyciągnij pola specyficzne dla Participant
-        sex = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_SEX)
+        raw_sex = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_SEX, perform_deep_lookup=True)
+        sex = map_sex_value(raw_sex) if raw_sex else None
         date_of_birth = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_DOB)
         disorder = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_DISORDER)
-        
+
         # Utwórz obiekt ParticipantIn
         participant = ParticipantIn(
             name=name,
@@ -62,7 +65,7 @@ class ParticipantConverter(BaseEntityConverter[ParticipantIn]):
 
     def find_by_source_id(self, source_id: str, dataset_id: str) -> str:
         """
-        Znajduje Participant w MongoDB po source_id i zwraca jego MongoDB ID
+        Finds Participant in MongoDB by source_id and returns its MongoDB ID
         """
         try:
             if DEBUG:
@@ -120,4 +123,3 @@ class ParticipantConverter(BaseEntityConverter[ParticipantIn]):
         except Exception as e:
             print(f"❌ Error finding Participant by source_id {source_id}: {e}")
             return ""
-

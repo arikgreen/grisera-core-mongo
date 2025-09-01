@@ -4,6 +4,7 @@ from typing import Dict, Any, List, TypeVar, Generic, Optional, Set
 from datetime import datetime
 
 from grisera import PropertyIn
+from data_operations.import_logger import get_import_logger
 from data_operations.utils import remove_prefix
 from mongo_service.mongo_api_service import MongoApiService
 from mongo_service.collection_mapping import Collections
@@ -33,7 +34,8 @@ class BaseEntityConverter(ABC, Generic[GriseraInType]):
     def _get_optional_field_value(
         self,
         json_entity: Dict[str, Any],
-        key_candidates: List[str]  # Lista "czystych" kluczy
+        key_candidates: List[str],  # Lista "czystych" kluczy
+        perform_deep_lookup: bool = False  # Jeśli True, szuka również w zagnieżdżonych obiektach
     ) -> Optional[str]:
         """
         Wyszukuje pierwszą pasującą wartość w json_entity na podstawie listy potencjalnych "czystych" kluczy.
@@ -46,8 +48,14 @@ class BaseEntityConverter(ABC, Generic[GriseraInType]):
                 if remove_prefix(entity_key_with_prefix) == clean_candidate_key:
                     # Upewnij się, że wartość nie jest pusta (None lub pusty string)
                     # NOWE: Ignoruj złożone typy (listy, słowniki) - nie powinny być używane jako główne pola
-                    if entity_value is not None and entity_value != "" and isinstance(entity_value, (str, int, float, bool)):  
+                    if entity_value is not None and entity_value != "" and isinstance(entity_value, (str, int, float, bool)):
                         return str(entity_value)
+
+                    if perform_deep_lookup:
+                        # Jeśli wartość jest złożona (np. obiekt lub lista), spróbuj wyciągnąć @id
+                        nested_id = self._extract_nested_entity_id(entity_value)
+                        if nested_id:
+                            return nested_id
         return None
 
     def _get_main_field_value(
@@ -69,7 +77,7 @@ class BaseEntityConverter(ABC, Generic[GriseraInType]):
         # Nie znaleziono wartości wśród kandydatów, użyj fallbacka.
         final_fallback_value: str
         # Domyślna wartość dla logowania, jeśli nie ma @id
-        clean_entity_id_for_print = f"{default_prefix_for_fallback.lower()}_unknown_id" 
+        clean_entity_id_for_print = f"{default_prefix_for_fallback.lower()}_unknown_id"
 
         effective_clean_entity_id: Optional[str] = None
         # Spróbuj uzyskać czyste @id z przekazanego entity_id_str_for_fallback
@@ -77,7 +85,7 @@ class BaseEntityConverter(ABC, Generic[GriseraInType]):
             cleaned_id = remove_prefix(entity_id_str_for_fallback)
             if cleaned_id and cleaned_id != "": # Upewnij się, że po usunięciu prefixu coś zostało
                 effective_clean_entity_id = cleaned_id
-        
+
         # Jeśli nie z przekazanego, spróbuj z json_entity["@id"]
         if not effective_clean_entity_id and "@id" in json_entity:
             raw_id_from_entity = json_entity["@id"]
@@ -85,7 +93,7 @@ class BaseEntityConverter(ABC, Generic[GriseraInType]):
                 cleaned_id = remove_prefix(str(raw_id_from_entity))
                 if cleaned_id and cleaned_id != "":
                      effective_clean_entity_id = cleaned_id
-        
+
         if effective_clean_entity_id:
             final_fallback_value = effective_clean_entity_id
             clean_entity_id_for_print = effective_clean_entity_id # Zaktualizuj dla logu
@@ -93,7 +101,7 @@ class BaseEntityConverter(ABC, Generic[GriseraInType]):
         else:
             final_fallback_value = f"{default_prefix_for_fallback}_id_placeholder" # Zmieniony placeholder
             print(f"⚠️ No main field found from candidates {json_key_candidates} AND no valid @id found for '{clean_entity_id_for_print}'. Using placeholder: {final_fallback_value}")
-        
+
         return final_fallback_value
 
     def _set_common_properties(self, json_entity: Dict[str, Any], target_object: GriseraInType) -> List[PropertyIn]:
@@ -161,7 +169,7 @@ class BaseEntityConverter(ABC, Generic[GriseraInType]):
             remove_prefix("@type"),
             remove_prefix("rdf:type")
         }
-        
+
         # Upewnij się, że processed_clean_keys są czyste i unikalne
         user_excluded_clean_keys = set(remove_prefix(k) for k in (processed_clean_keys or []))
         final_excluded_clean_keys = default_excluded_clean_keys.union(user_excluded_clean_keys)
@@ -179,7 +187,7 @@ class BaseEntityConverter(ABC, Generic[GriseraInType]):
                         # np. elif isinstance(item, dict): properties_list.append(PropertyIn(key=clean_key, value=json.dumps(item)))
                 # Można dodać obsługę serializacji zagnieżdżonych słowników
                 # np. elif isinstance(value, dict): properties_list.append(PropertyIn(key=clean_key, value=json.dumps(value)))
-    
+
     def _extract_nested_entity_id(self, entity_value: Any) -> Optional[str]:
         """
         Wyciąga @id z zagnieżdżonych obiektów JSON (lista obiektów lub pojedynczy obiekt).
@@ -195,7 +203,7 @@ class BaseEntityConverter(ABC, Generic[GriseraInType]):
         elif isinstance(entity_value, str):
             # Proste ID jako string
             return entity_value
-        
+
         return None
 
     @abstractmethod
