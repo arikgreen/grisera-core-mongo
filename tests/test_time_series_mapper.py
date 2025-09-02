@@ -48,13 +48,13 @@ class TestTimeSeriesJsonLdHelper:
         assert "co:hasObservableInformation" in result
         assert len(result["co:hasObservableInformation"]) == 1
         obs_info = result["co:hasObservableInformation"][0]
-        assert obs_info["@id"] == ":68b6dc6379acd6b915b0e17c"
+        assert obs_info["@id"] == "68b6dc6379acd6b915b0e17c"
         
         # Sprawdź Measures
         assert "co:hasMeasure" in result
         assert len(result["co:hasMeasure"]) == 1
         measure = result["co:hasMeasure"][0]
-        assert measure["@id"] == ":68b6dbec79acd6b915b0e15a"
+        assert measure["@id"] == "68b6dbec79acd6b915b0e15a"
         assert measure["co:measureDatatype"] == "string"
 
         print("\\n=== ACTUAL RESULT ===")

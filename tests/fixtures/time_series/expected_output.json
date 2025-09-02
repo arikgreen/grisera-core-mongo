@@ -5,14 +5,14 @@
   "co:timeSeriesSource": "6044242f-f69b-4954-ae20-72e4bc10768a/test.png",
   "pc:hasProperty": [
     {
-      "@id": ":spacing68b6dc6379acd6b915b0e17d",
+      "@id": "spacing68b6dc6379acd6b915b0e17d",
       "pc:hasKey": "spacing",
       "pc:hasValue": "Irregular"
     }
   ],
   "co:hasObservableInformation": [
     {
-      "@id": ":68b6dc6379acd6b915b0e17c",
+      "@id": "68b6dc6379acd6b915b0e17c",
       "co:hasModality": [
         {
           "@id": "68b6dbec79acd6b915b0e141"
@@ -25,21 +25,21 @@
       ],
       "co:hasRecording": [
         {
-          "@id": ":68b6dc4f79acd6b915b0e17b",
+          "@id": "68b6dc4f79acd6b915b0e17b",
           "co:hasParticipation": [
             {
-              "@id": ":68b6dc3d79acd6b915b0e178",
+              "@id": "68b6dc3d79acd6b915b0e178",
               "co:hasActivityExecution": [
                 {
-                  "@id": ":68b6dc3679acd6b915b0e176"
+                  "@id": "68b6dc3679acd6b915b0e176"
                 }
               ],
               "co:hasParticipantState": [
                 {
-                  "@id": ":68b6dc3d79acd6b915b0e177",
+                  "@id": "68b6dc3d79acd6b915b0e177",
                   "co:hasParticipant": [
                     {
-                      "@id": ":68b6dc0179acd6b915b0e171",
+                      "@id": "68b6dc0179acd6b915b0e171",
                       "co:hasSex": [
                         {
                           "@id": "co:sexMale"
@@ -57,7 +57,7 @@
   ],
   "co:hasMeasure": [
     {
-      "@id": ":68b6dbec79acd6b915b0e15a",
+      "@id": "68b6dbec79acd6b915b0e15a",
       "co:hasMeasureName": [
         {
           "@id": "68b6dbec79acd6b915b0e159"

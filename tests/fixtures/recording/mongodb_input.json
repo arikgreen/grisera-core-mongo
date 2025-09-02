@@ -1,0 +1,129 @@
+{
+  "_id": "68b752efa4ca959ee0715c67",
+  "errors": null,
+  "links": null,
+  "external_id": null,
+  "import_job_id": null,
+  "import_timestamp": null,
+  "participation_id": "68b752d9a4ca959ee0715c64",
+  "registered_channel_id": "68b752efa4ca959ee0715c66",
+  "additional_properties": [
+    {
+      "key": "cameraLocation",
+      "value": "UL"
+    }
+  ],
+  "registered_channel": null,
+  "participation": null,
+  "observable_informations": [
+    {
+      "errors": null,
+      "links": null,
+      "external_id": null,
+      "import_job_id": null,
+      "import_timestamp": null,
+      "modality_id": "68b7524fa4ca959ee0715c2f",
+      "life_activity_id": "68b7524fa4ca959ee0715c3e",
+      "recording_id": "68b752efa4ca959ee0715c67",
+      "id": "68b75329a4ca959ee0715c68",
+      "recording": null,
+      "timeSeries": null,
+      "modality": null,
+      "life_activity": null
+    }
+  ],
+  "related_participations": [
+    {
+      "_id": "68b752d9a4ca959ee0715c64",
+      "external_id": null,
+      "import_job_id": null,
+      "import_timestamp": null,
+      "activity_execution_id": "68b752b7a4ca959ee0715c62",
+      "participant_state_id": "68b752d9a4ca959ee0715c63"
+    }
+  ],
+  "related_participants": [
+    {
+      "_id": "68b75266a4ca959ee0715c5d",
+      "external_id": null,
+      "import_job_id": null,
+      "import_timestamp": null,
+      "name": "Arkadiusz 1",
+      "date_of_birth": "2025-09-02 00:00:00",
+      "sex": "Male",
+      "disorder": "Disorder",
+      "participant_states": [
+        {
+          "participant_id": "68b75266a4ca959ee0715c5d",
+          "personality_ids": null,
+          "appearance_ids": ["68b7524fa4ca959ee0715c40"],
+          "external_id": null,
+          "import_job_id": null,
+          "import_timestamp": null,
+          "age": null,
+          "additional_properties": [],
+          "id": "68b752d9a4ca959ee0715c63"
+        }
+      ]
+    }
+  ],
+  "related_registered_channels": [
+    {
+      "_id": "68b752efa4ca959ee0715c66",
+      "external_id": null,
+      "import_job_id": null,
+      "import_timestamp": null,
+      "channel_id": "68b7524fa4ca959ee0715c28",
+      "registered_data_id": "68b752efa4ca959ee0715c65",
+      "additional_properties": null
+    }
+  ],
+  "related_channels": [
+    {
+      "_id": "68b7524fa4ca959ee0715c28",
+      "external_id": null,
+      "import_job_id": null,
+      "import_timestamp": null,
+      "type": "Audio",
+      "description": "Audio channel"
+    }
+  ],
+  "related_registered_data": [
+    {
+      "_id": "68b752efa4ca959ee0715c65",
+      "external_id": null,
+      "import_job_id": null,
+      "import_timestamp": null,
+      "registered_channel_id": "68b752efa4ca959ee0715c66"
+    }
+  ],
+  "related_activity_executions": [
+    {
+      "_id": "68b752b7a4ca959ee0715c62",
+      "external_id": null,
+      "import_job_id": null,
+      "import_timestamp": null,
+      "activity_id": "68b7524fa4ca959ee0715c23"
+    }
+  ],
+  "related_activities": [
+    {
+      "_id": "68b7524fa4ca959ee0715c23",
+      "external_id": null,
+      "import_job_id": null,
+      "import_timestamp": null,
+      "name": "Activity Test"
+    }
+  ],
+  "related_appearances": [
+    {
+      "_id": "68b7524fa4ca959ee0715c40",
+      "external_id": null,
+      "import_job_id": null,
+      "import_timestamp": null,
+      "moustache_value": "Some",
+      "beard_value": "Heavy",
+      "glasses": true
+    }
+  ]
+}

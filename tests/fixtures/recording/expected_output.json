@@ -1,0 +1,71 @@
+{
+  "@id": "68b752efa4ca959ee0715c67",
+  "co:hasRegisteredChannel": [
+    {
+      "@id": "68b752efa4ca959ee0715c66",
+      "co:hasRegisteredData": [
+        {
+          "@id": "68b752efa4ca959ee0715c65"
+        }
+      ],
+      "co:hasChannel": [
+        {
+          "@id": "co:channelAudio"
+        }
+      ]
+    }
+  ],
+  "co:hasParticipation": [
+    {
+      "@id": "68b752d9a4ca959ee0715c64",
+      "co:hasActivityExecution": [
+        {
+          "@id": "68b752b7a4ca959ee0715c62",
+          "co:hasActivity": [
+            {
+              "@id": "68b7524fa4ca959ee0715c23"
+            }
+          ]
+        }
+      ],
+      "co:hasParticipantState": [
+        {
+          "@id": "68b752d9a4ca959ee0715c63",
+          "co:hasApperance": [
+            {
+              "@id": "68b7524fa4ca959ee0715c40",
+              "appearanceOcclusion:hasMoustacheValue": [
+                {
+                  "@id": "appearanceOcclusion:appearanceSome"
+                }
+              ],
+              "appearanceOcclusion:hasBeardValue": [
+                {
+                  "@id": "appearanceOcclusion:appearanceHeavy"
+                }
+              ],
+              "appearanceOcclusion:hasGlasses": "true"
+            }
+          ],
+          "co:hasParticipant": [
+            {
+              "@id": "68b75266a4ca959ee0715c5d",
+              "co:hasSex": [
+                {
+                  "@id": "co:sexMale"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "pc:hasProperty": [
+    {
+      "@id": "cameraLocation68b752efa4ca959ee0715c67",
+      "pc:hasKey": "cameraLocation",
+      "pc:hasValue": "UL"
+    }
+  ]
+}

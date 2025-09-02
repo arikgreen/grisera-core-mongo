@@ -115,6 +115,9 @@ class TimeSeriesJsonLdHelper(BaseJsonLdHelper):
         if "value" in entity_doc and entity_doc["value"]:
             properties["co:hasValue"] = entity_doc["value"]
 
+        if "type" in entity_doc and entity_doc["type"]:
+            properties["co:timeSeriesType"] = entity_doc["type"]
+
         if "metadata" in entity_doc and entity_doc["metadata"]:
             metadata = entity_doc["metadata"]
             
@@ -126,7 +129,7 @@ class TimeSeriesJsonLdHelper(BaseJsonLdHelper):
                 ts_properties = []
                 for prop in metadata["additional_properties"]:
                     prop_obj = {
-                        "@id": f":{prop['key']}{metadata['id']}",
+                        "@id": f"{prop['key']}{metadata['id']}",
                         "pc:hasKey": prop["key"],
                         "pc:hasValue": prop["value"]
                     }
@@ -141,7 +144,7 @@ class TimeSeriesJsonLdHelper(BaseJsonLdHelper):
                 if "observable_informations" in recording:
                     for obs_info in recording["observable_informations"]:
                         obs_info_obj = {
-                            "@id": f":{obs_info['id']}"
+                            "@id": f"{obs_info['id']}"
                         }
                         
                         # Dodaj modality
@@ -154,7 +157,7 @@ class TimeSeriesJsonLdHelper(BaseJsonLdHelper):
                         
                         # Dodaj recording
                         recording_obj = {
-                            "@id": f":{recording['_id']}"
+                            "@id": f"{recording['_id']}"
                         }
                         
                         # Dodaj participations
@@ -163,13 +166,13 @@ class TimeSeriesJsonLdHelper(BaseJsonLdHelper):
                             for participation in entity_doc["related_participations"]:
                                 if participation["_id"] == recording["participation_id"]:
                                     participation_obj = {
-                                        "@id": f":{participation['_id']}"
+                                        "@id": f"{participation['_id']}"
                                     }
                                     
                                     # Dodaj activity execution
                                     if "activity_execution_id" in participation:
                                         activity_exec_obj = {
-                                            "@id": f":{participation['activity_execution_id']}"
+                                            "@id": f"{participation['activity_execution_id']}"
                                         }
                                         participation_obj["co:hasActivityExecution"] = [activity_exec_obj]
                                     
@@ -180,12 +183,12 @@ class TimeSeriesJsonLdHelper(BaseJsonLdHelper):
                                                 for state in participant["participant_states"]:
                                                     if state["id"] == participation["participant_state_id"]:
                                                         state_obj = {
-                                                            "@id": f":{state['id']}"
+                                                            "@id": f"{state['id']}"
                                                         }
                                                         
                                                         # Dodaj participant
                                                         participant_obj = {
-                                                            "@id": f":{participant['_id']}"
+                                                            "@id": f"{participant['_id']}"
                                                         }
                                                         if "sex" in participant and participant["sex"]:
                                                             participant_obj["co:hasSex"] = [{"@id": f"co:sex{participant['sex']}"}]
@@ -220,7 +223,7 @@ class TimeSeriesJsonLdHelper(BaseJsonLdHelper):
             measures = []
             for measure in entity_doc["related_measures"]:
                 measure_obj = {
-                    "@id": f":{measure['_id']}"
+                    "@id": f"{measure['_id']}"
                 }
                 
                 if "measure_name_id" in measure and measure["measure_name_id"]:
