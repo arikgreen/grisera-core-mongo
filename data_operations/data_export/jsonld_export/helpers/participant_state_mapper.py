@@ -39,7 +39,7 @@ class ParticipantStateJsonLdHelper(BaseJsonLdHelper):
                 for state in participant["participant_states"]:
                     # Dodaj informacje o parent participant
                     state["participant_external_id"] = participant.get("external_id")
-                    state["participant_id"] = participant.get("_id")
+                    state["_participant_id"] = participant.get("id")
                     participant_states.append(state)
         
         print(f"✅ Found {len(participant_states)} participant states from {len(participants)} participants")
@@ -56,15 +56,13 @@ class ParticipantStateJsonLdHelper(BaseJsonLdHelper):
             properties["co:hasAge"] = entity_doc["age"]
             
         if "personality_ids" in entity_doc and entity_doc["personality_ids"]:
-            # TODO: Mapuj personality_ids na obiekty @id
             properties["co:hasPersonality"] = [self._create_id_object(pid) for pid in entity_doc["personality_ids"]]
             
         if "appearance_ids" in entity_doc and entity_doc["appearance_ids"]:
-            # TODO: Mapuj appearance_ids na obiekty @id
             properties["co:hasAppearance"] = [self._create_id_object(aid) for aid in entity_doc["appearance_ids"]]
             
-        if "participant_id" in entity_doc and entity_doc["participant_id"]:
-            properties["co:hasParticipant"] = [self._create_id_object(entity_doc["participant_id"])]
+        if "_participant_id" in entity_doc and entity_doc["_participant_id"]:
+            properties["co:hasParticipant"] = [self._create_id_object(entity_doc["_participant_id"])]
         
         base_structure.update(properties)
         return base_structure

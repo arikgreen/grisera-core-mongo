@@ -178,19 +178,16 @@ class ParticipantStateConverter(BaseEntityConverter["ParticipantStateIn"]):
                     print(f"🔍 ParticipantState source ID: {source_entity_ref}")
 
             # KROK 2: Mapuj participant_id z source ID na MongoDB ID
-            mapped_participant_id = grisera_object.participant_id
-            if grisera_object.participant_id and str(grisera_object.participant_id).startswith(":"):
-                # To jest source ID, mapuj na MongoDB ID
-                participant_source_id = str(grisera_object.participant_id).replace(":", "")
-                participant_mongo_id = self.participant_service.find_by_source_id(participant_source_id, dataset_id)
+            participant_source_id = str(grisera_object.participant_id)
+            participant_mongo_id = self.participant_service.find_by_source_id(participant_source_id, dataset_id)
 
-                if participant_mongo_id:
-                    mapped_participant_id = participant_mongo_id
-                    if DEBUG:
-                        print(f"✅ Mapped participant_id: {grisera_object.participant_id} -> {mapped_participant_id}")
-                else:
-                    print(f"❌ Could not find Participant in MongoDB for source ID: {participant_source_id}")
-                    self._log_import_error(
+            if participant_mongo_id:
+                mapped_participant_id = participant_mongo_id
+                if DEBUG:
+                    print(f"✅ Mapped participant_id: {grisera_object.participant_id} -> {mapped_participant_id}")
+            else:
+                print(f"❌ Could not find Participant in MongoDB for source ID: {participant_source_id}")
+                self._log_import_error(
                         import_id,
                         dataset_id,
                         "PARTICIPANT_NOT_FOUND_FOR_PARTICIPANT_STATE",
@@ -198,7 +195,7 @@ class ParticipantStateConverter(BaseEntityConverter["ParticipantStateIn"]):
                         source_entity_ref or "unknown"
                     )
                     # Nie możemy zapisać ParticipantState bez participant_id
-                    return None
+                return None
 
             if not mapped_participant_id:
                 print(f"❌ ParticipantState - Missing participant_id after mapping")

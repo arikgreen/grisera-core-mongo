@@ -73,7 +73,7 @@ class ParticipantConverter(BaseEntityConverter[ParticipantIn]):
                 print(f"🔍 Searching for Participant with source_id: {source_id}")
 
             query_filter = {
-                "external_id": f":{source_id}"
+                "external_id": f"{source_id}"
             }
 
             if DEBUG:

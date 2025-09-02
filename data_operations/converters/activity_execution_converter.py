@@ -127,7 +127,6 @@ class ActivityExecutionConverter(BaseEntityConverter[ActivityExecutionIn]):
         """
         Znajduje ActivityExecution w MongoDB po source_id i zwraca jego MongoDB ID.
 
-        POPRAWKA: ActivityExecution są embedded w Activity documents, nie w osobnej kolekcji!
         """
         try:
             if DEBUG:
