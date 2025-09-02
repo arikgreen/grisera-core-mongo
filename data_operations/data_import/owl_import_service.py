@@ -93,6 +93,10 @@ class OwlImportService:
         for s, p, o in g.triples((None, RDF.type, None)):
             if not isinstance(o, URIRef):
                 continue
+            # Skip owl:Ontology instances
+            class_name = self._simplify(o, namespaces)
+            if class_name == "owl:Ontology":
+                continue
             instances[o].append(s)
 
         if DEBUG:
@@ -147,6 +151,10 @@ class OwlImportService:
 
         for predicate, obj in graph.predicate_objects(subject=resource):
             pred = self._simplify(predicate, namespaces)
+            
+            # Skip rdf:type predicates to avoid unnecessary type information
+            if pred == "rdf:type":
+                continue
 
             if isinstance(obj, URIRef):
                 node.setdefault(pred, [])
