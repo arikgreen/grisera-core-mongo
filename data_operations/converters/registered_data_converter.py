@@ -1,7 +1,9 @@
+from typing import Dict, Any
 from typing import Dict, Any, Optional
 from uuid import uuid4
 
 from grisera import RegisteredDataIn
+from .base import BaseEntityConverter, DEBUG
 from grisera.clients.minio_client import MinIOClient
 
 from data_operations.utils import remove_prefix
@@ -45,7 +47,7 @@ class RegisteredDataConverter(BaseEntityConverter[RegisteredDataIn]):
                     print(f"✅ Found file '{filename}' by original_filename in dataset {dataset_id}: {file_data.filename}")
                     return file_data.filename  # This is the object_name in MinIO
 
-                # Check custom name (display name) 
+                # Check custom name (display name)
                 if file_data.name and file_data.name == filename:
                     print(f"✅ Found file '{filename}' by display name in dataset {dataset_id}: {file_data.filename}")
                     return file_data.filename
@@ -171,7 +173,11 @@ class RegisteredDataConverter(BaseEntityConverter[RegisteredDataIn]):
                 source = self._process_source_file(source, self._current_dataset_id)
             else:
                 print(f"⚠️ dataset_id not available, cannot process source file for RegisteredData '{clean_name_for_log}'")
-
+if not source:
+            # Generuj source URL na podstawie external_id
+            clean_id = remove_prefix(external_id) if external_id else "unknown"
+            source = f"https://road.affectivese.org/datasets/InconsistencyDataset/{clean_id}.csv"
+        
         registered_data = RegisteredDataIn(source=source)
 
         additional_properties = self._set_common_properties(json_entity, registered_data)
@@ -188,8 +194,8 @@ class RegisteredDataConverter(BaseEntityConverter[RegisteredDataIn]):
         processed_clean_keys.extend(self.JSON_KEY_CANDIDATES_FOR_SOURCE)
         self._add_remaining_properties(json_entity, additional_properties, processed_clean_keys)
 
-        print(
-            f"📝 Creating RegisteredDataIn: name='{clean_name_for_log}', source='{source}', external_id='{registered_data.external_id}', import_job_id='{registered_data.import_job_id}', properties={len(additional_properties)} (including common)")
+        clean_name_for_log = remove_prefix(external_id) if external_id else "Unknown"
+        print(f"📝 Creating RegisteredDataIn: name='{clean_name_for_log}', source='{source}', external_id='{registered_data.external_id}', import_job_id='{registered_data.import_job_id}', properties={len(additional_properties)} (including common)")
         registered_data.additional_properties = additional_properties
         return registered_data
 
@@ -200,3 +206,5 @@ class RegisteredDataConverter(BaseEntityConverter[RegisteredDataIn]):
 
     def find_by_source_id(self, source_id: str, dataset_id: str) -> str:
         return self._find_by_source_id(source_id, dataset_id, Collections.REGISTERED_DATA)
+
+

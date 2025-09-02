@@ -1,11 +1,12 @@
 from typing import Dict, Any
 
 from grisera import ParticipantIn
+from .base import BaseEntityConverter, DEBUG
+from data_operations.utils import remove_prefix
 
 from data_operations.data_mappers import map_sex_value
 from mongo_service.collection_mapping import Collections
 from services.mongo_services import MongoServiceFactory
-from .base import BaseEntityConverter, DEBUG
 
 
 class ParticipantConverter(BaseEntityConverter[ParticipantIn]):
@@ -123,3 +124,4 @@ class ParticipantConverter(BaseEntityConverter[ParticipantIn]):
         except Exception as e:
             print(f"❌ Error finding Participant by source_id {source_id}: {e}")
             return ""
+

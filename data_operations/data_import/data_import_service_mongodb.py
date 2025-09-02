@@ -161,6 +161,7 @@ class DataImportServiceMongoDB(GenericMongoServiceMixin):
         """
         print(f"⚙️ Processing import data for type: {import_data.file_type} (Import ID: {import_id})")
         if import_data.file_type.lower() == "json":
+            print(f"📄 Processing JSON data for import ID: {import_id}...")
             return self.json_import_service.import_json_data(import_data, import_id)
         elif import_data.file_type.lower() == "owl":
             return self.owl_import_service.import_owl_data(import_data, import_id)
