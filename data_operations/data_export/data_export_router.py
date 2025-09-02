@@ -1,4 +1,5 @@
 from typing import List
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Path, Query
 from fastapi.responses import JSONResponse
 
@@ -19,6 +20,13 @@ router = APIRouter(prefix="/export", tags=["Data Export"])
 export_service = DataExportService()
 
 
+def _convert_datetime_to_iso(value):
+    """Konwertuje datetime na ISO string lub zwraca string bez zmian"""
+    if hasattr(value, 'isoformat'):
+        return value.isoformat()
+    return str(value) if value else None
+
+
 @router.post("/start", response_model=FileOperationOut)
 async def start_export(export_data: FileOperationIn):
     """
@@ -35,6 +43,11 @@ async def start_export(export_data: FileOperationIn):
     """
     try:
         print(f"🚀 API: Starting export for dataset: {export_data.dataset_id}")
+        
+        # Automatycznie ustaw typ operacji na EXPORT
+        from data_operations.file_operations_model import OperationType
+        export_data.operation_type = OperationType.EXPORT
+        
         result = export_service.start_export(export_data)
         
         if result.status.value == "failed":
@@ -124,7 +137,10 @@ async def list_exports(
     """
     try:
         print(f"📋 API: Getting exports list for dataset: {dataset_id}")
-        exports = export_service.get_exports_by_dataset_id(dataset_id)
+        
+        # Użyj nowej metody z filtracją po typie EXPORT
+        from data_operations.file_operations_model import OperationType
+        exports = export_service.get_exports_by_dataset_id(dataset_id, OperationType.EXPORT)
         
         print(f"✅ API: Found {len(exports)} exports for dataset: {dataset_id}")
         return exports
@@ -140,13 +156,76 @@ async def list_exports(
         )
 
 
+@router.get("/files/{dataset_id}")
+async def list_exported_files(
+    dataset_id: str = Path(..., description="ID datasetu")
+):
+    """
+    Pobiera listę wszystkich wyeksportowanych plików dla datasetu
+    
+    Args:
+        dataset_id: ID datasetu
+        
+    Returns:
+        Lista wyeksportowanych plików
+    """
+    try:
+        print(f"📋 API: Getting exported files list for dataset: {dataset_id}")
+        
+        # Pobierz wszystkie pliki z kolekcji EXPORT_FILES dla danego datasetu
+        from mongo_service.collection_mapping import Collections
+        
+        exported_files = export_service.mongo_api_service.find(
+            collection_name=Collections.EXPORT_FILES.value,
+            query_filter={"dataset_id": dataset_id}
+        )
+        
+        files_list = []
+        for file_doc in exported_files:
+            # Pobierz status operacji eksportu
+            export_status = export_service.get_export_status(file_doc["export_id"], dataset_id)
+            
+            file_info = {
+                "file_id": file_doc["id"],
+                "export_id": file_doc["export_id"],
+                "file_name": file_doc["file_name"],
+                "file_type": file_doc["file_type"],
+                "content_type": file_doc["content_type"],
+                "size": file_doc.get("size"),
+                "total_entities": file_doc["total_entities"],
+                "entity_types": file_doc["entity_types"],
+                "export_format": file_doc["export_format"],
+                "created_at": file_doc["created_at"],
+                "description": file_doc.get("description"),
+                "export_status": export_status.status.value if export_status else "unknown"
+            }
+            files_list.append(file_info)
+        
+        print(f"✅ API: Found {len(files_list)} exported files for dataset: {dataset_id}")
+        return JSONResponse(content={
+            "dataset_id": dataset_id,
+            "total_files": len(files_list),
+            "files": files_list
+        })
+        
+    except Exception as e:
+        print(f"❌ API: Error getting exported files list: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": "Internal server error while getting exported files list",
+                "error": str(e)
+            }
+        )
+
+
 @router.get("/download/{export_id}")
 async def download_export(
     export_id: str = Path(..., description="ID eksportu"),
     dataset_id: str = Query(..., description="ID datasetu")
 ):
     """
-    Pobiera wyeksportowany plik (DUMMY IMPLEMENTATION)
+    Pobiera wyeksportowany plik z kolekcji EXPORT_FILES
     
     Args:
         export_id: ID eksportu
@@ -180,34 +259,21 @@ async def download_export(
                 }
             )
         
-        # DUMMY IMPLEMENTATION - zwróć JSON z informacją o eksporcie
-        # Używamy tylko pól dostępnych w FileOperationOut
-        dummy_export_data = {
-            "export_id": export_id,
-            "dataset_id": dataset_id,
-            "file_type": export_status.file_type,
-            "operation_type": export_status.operation_type.value,
-            "status": export_status.status.value,
-            "processed_records": export_status.processed_records,
-            "created_at": export_status.created_at,
-            "description": export_status.description,
-            "file_info": {
-                "file_name": export_status.file_name,
-                "file_type": export_status.file_type
-            },
-            "dummy_data": {
-                "message": "This is a dummy export response",
-                "note": "Real implementation will return actual exported data",
-                "sample_records": [
-                    {"id": 1, "name": "Sample Export Record 1", "type": "dummy"},
-                    {"id": 2, "name": "Sample Export Record 2", "type": "dummy"},
-                    {"id": 3, "name": "Sample Export Record 3", "type": "dummy"}
-                ]
-            }
-        }
+        # Pobierz eksportowany plik z kolekcji EXPORT_FILES
+        exported_file_content = export_service.get_exported_file(export_id)
         
-        print(f"✅ API: Returning dummy export data for ID: {export_id}")
-        return JSONResponse(content=dummy_export_data)
+        if not exported_file_content:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "message": "Exported file not found in database",
+                    "export_id": export_id
+                }
+            )
+        
+        # Zwróć tylko zawartość pliku (czysty JSON-LD)
+        print(f"✅ API: Returning exported file content for ID: {export_id}")
+        return JSONResponse(content=exported_file_content)
         
     except HTTPException:
         raise
@@ -247,6 +313,73 @@ async def get_supported_scopes():
     # print(f"📋 API: Returning supported export scopes: {scopes}")
     # return scopes
     return None
+
+
+@router.delete("/file/{export_id}")
+async def delete_exported_file(
+    export_id: str = Path(..., description="ID eksportu"),
+    dataset_id: str = Query(..., description="ID datasetu")
+):
+    """
+    Usuwa wyeksportowany plik z kolekcji EXPORT_FILES
+    
+    Args:
+        export_id: ID eksportu
+        dataset_id: ID datasetu
+        
+    Returns:
+        Status usunięcia pliku
+    """
+    try:
+        print(f"🗑️ API: Delete request for exported file ID: {export_id}")
+        
+        # Sprawdź czy plik istnieje
+        exported_file = export_service.get_exported_file(export_id)
+        
+        if not exported_file:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "message": "Exported file not found",
+                    "export_id": export_id
+                }
+            )
+        
+        # Usuń plik z kolekcji EXPORT_FILES
+        from mongo_service.collection_mapping import Collections
+        
+        delete_result = export_service.mongo_api_service.delete_one(
+            collection_name=Collections.EXPORT_FILES.value,
+            query_filter={"export_id": export_id}
+        )
+        
+        if delete_result.deleted_count == 0:
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "message": "Failed to delete exported file",
+                    "export_id": export_id
+                }
+            )
+        
+        print(f"✅ API: Exported file deleted for ID: {export_id}")
+        return JSONResponse(content={
+            "message": "Exported file deleted successfully",
+            "export_id": export_id,
+            "deleted_count": delete_result.deleted_count
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ API: Error deleting exported file: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": "Internal server error while deleting exported file",
+                "error": str(e)
+            }
+        )
 
 
 @router.get("/health")

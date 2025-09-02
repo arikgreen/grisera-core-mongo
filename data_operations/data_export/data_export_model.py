@@ -1,10 +1,13 @@
 from typing import List, Optional, Any, Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum
+from datetime import datetime
+import uuid
 
 
 class ExportFormat(str, Enum):
     """Format eksportu"""
+    JSON_LD = "json-ld"
     JSON = "json"
     CSV = "csv"
     XML = "xml"
@@ -19,18 +22,20 @@ class ExportStatus(str, Enum):
 
 
 class ExportScope(str, Enum):
-    """Zakres eksportu danych"""
+    """Zakres eksportu"""
     ALL = "all"                    # Wszystkie dane
     EXPERIMENT = "experiment"      # Tylko określony eksperyment
     DATE_RANGE = "date_range"      # Określony zakres dat
     ENTITY_TYPE = "entity_type"    # Określony typ encji
+    SELECTED = "selected"
+    CUSTOM = "custom"
 
 
 class DataExportIn(BaseModel):
     """Model wejściowy dla eksportu danych"""
     dataset_id: str
     export_format: ExportFormat = ExportFormat.JSON
-    export_scope: ExportScope = ExportScope.ALL
+    # export_scope: ExportScope = ExportScope.ALL
     description: Optional[str] = None
 
     # Filtry eksportu
@@ -53,7 +58,7 @@ class DataExportOut(BaseModel):
     id: str  # MongoDB ObjectId jako string
     dataset_id: str
     export_format: ExportFormat
-    export_scope: ExportScope
+    # export_scope: ExportScope
     status: ExportStatus
     description: Optional[str] = None
 
@@ -92,4 +97,40 @@ class ExportProgressOut(BaseModel):
     total_records: Optional[int] = None
     error_count: int = 0
     last_updated: Optional[str] = None
+
+
+class ExportedFile(BaseModel):
+    """Model dla eksportowanego pliku z danymi"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    export_id: str  # ID operacji eksportu
+    dataset_id: str
+    file_name: str
+    file_type: str
+    content_type: str = "application/json"
+    size: Optional[int] = None
+    content: Dict[str, Any]  # Zawartość pliku (JSON, etc.)
+    
+    # Metadata
+    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    updated_at: Optional[str] = None
+    
+    # Statystyki eksportu
+    total_entities: int = 0
+    entity_types: List[str] = []
+    export_format: ExportFormat = ExportFormat.JSON_LD
+    
+    # Dodatkowe informacje
+    description: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class ExportPreview(BaseModel):
+    """Model dla podglądu eksportu"""
+    dataset_id: str
+    export_format: ExportFormat
+    preview_data: Dict[str, Any]
+    entity_counts: Dict[str, int]
+    total_entities: int
+    estimated_size: Optional[int] = None
+    supported_entity_types: List[str] = []
 

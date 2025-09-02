@@ -115,7 +115,6 @@ class MeasureConverter(BaseEntityConverter[MeasureIn]):
             if DEBUG:
                 print(f"💾 Saving Measure with measure_name_id mapping...")
 
-            # KROK 1: Mapuj measure_name_id z source ID na MongoDB ID
             measure_name_source_id = str(grisera_object.measure_name_id)
             measure_name_mongo_id = self._find_by_source_id(measure_name_source_id, dataset_id, Collections.MEASURE_NAME)
 

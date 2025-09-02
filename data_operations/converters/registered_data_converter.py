@@ -173,11 +173,12 @@ class RegisteredDataConverter(BaseEntityConverter[RegisteredDataIn]):
                 source = self._process_source_file(source, self._current_dataset_id)
             else:
                 print(f"⚠️ dataset_id not available, cannot process source file for RegisteredData '{clean_name_for_log}'")
-if not source:
+
+        if not source:
             # Generuj source URL na podstawie external_id
             clean_id = remove_prefix(external_id) if external_id else "unknown"
             source = f"https://road.affectivese.org/datasets/InconsistencyDataset/{clean_id}.csv"
-        
+
         registered_data = RegisteredDataIn(source=source)
 
         additional_properties = self._set_common_properties(json_entity, registered_data)

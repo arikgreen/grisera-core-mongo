@@ -35,6 +35,10 @@ async def upload_data(
         Status importu
     """
     try:
+        # Automatycznie ustaw typ operacji na IMPORT
+        from data_operations.file_operations_model import OperationType
+        import_request.operation_type = OperationType.IMPORT
+        
         result = import_service.start_import(import_request)
 
         if result.status == "failed":
@@ -80,6 +84,10 @@ async def upload_file(
             description=description,
             experiment_id=experiment_id
         )
+        
+        # Automatycznie ustaw typ operacji na IMPORT
+        from data_operations.file_operations_model import OperationType
+        import_request.operation_type = OperationType.IMPORT
 
         result = import_service.start_import(import_request)
 
@@ -151,7 +159,9 @@ async def get_imports_by_dataset(
         Lista importów.
     """
     try:
-        imports = import_service.get_imports_by_dataset_id(dataset_id)
+        # Użyj nowej metody z filtracją po typie IMPORT
+        from data_operations.file_operations_model import OperationType
+        imports = import_service.get_imports_by_dataset_id(dataset_id, OperationType.IMPORT)
         if not imports:
             return []
         return imports

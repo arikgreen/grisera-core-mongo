@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 import threading
 
 from data_operations.file_operations_service import FileOperationsStatusService
@@ -134,22 +134,30 @@ class DataImportServiceMongoDB(GenericMongoServiceMixin):
         print(f"🔍 Getting import status for ID: {import_id}, dataset: {dataset_id}")
         return self.file_ops_service.get_operation_status(import_id, dataset_id)
 
-    def get_imports_by_dataset_id(self, dataset_id: str) -> List[FileOperationOut]:
+    def get_imports_by_dataset_id(self, dataset_id: str, operation_type: Optional[OperationType] = None) -> List[FileOperationOut]:
         """
-        Pobiera wszystkie importy dla danego ID datasetu.
+        Pobiera importy dla danego ID datasetu.
+        
+        Args:
+            dataset_id: ID datasetu
+            operation_type: Opcjonalny typ operacji (domyślnie IMPORT)
         """
-        print(f"🔍 Fetching all imports for dataset ID: {dataset_id}")
+        if operation_type is None:
+            operation_type = OperationType.IMPORT
+            
+        print(f"🔍 Fetching {operation_type.value} operations for dataset ID: {dataset_id}")
         try:
-            file_operations = self.file_ops_service.get_operations_by_dataset_id(dataset_id)
+            file_operations = self.file_ops_service.get_operations_by_dataset_id(dataset_id, operation_type)
 
             if not file_operations:
-                print(f"ℹ️ No import operations found for dataset ID: {dataset_id}")
+                print(f"ℹ️ No {operation_type.value} operations found for dataset ID: {dataset_id}")
                 return []
 
+            print(f"✅ Found {len(file_operations)} {operation_type.value} operations for dataset ID: {dataset_id}")
             return file_operations
 
         except Exception as e:
-            print(f"❌ Error fetching imports for dataset {dataset_id}: {str(e)}")
+            print(f"❌ Error fetching {operation_type.value} operations for dataset {dataset_id}: {str(e)}")
             import traceback
             print(traceback.format_exc())
             return []

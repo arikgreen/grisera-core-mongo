@@ -318,15 +318,53 @@ class ExperimentScenariosBuilder:
                     # Wyciągnij Activity ID z co:hasActivity
                     activity_source_id = self._extract_activity_id_from_ae(ae_data)
                     if not activity_source_id:
-                        print(f"❌ No Activity found in ActivityExecution {ae_id}")
-                        self._log_import_error(
-                            import_id,
-                            import_data.dataset_id,
-                            "MISSING_ACTIVITY_IN_AE",
-                            f"No co:hasActivity found in ActivityExecution {ae_id}",
-                            ae_id
-                        )
-                        continue
+                        ae_external_id = ae_id
+                        if ae_external_id:
+                            print(f"🔍 Searching for activity with activity_execution external_id: {ae_external_id}")
+
+                            query_filter = {
+                                "activity_executions": {
+                                    "$elemMatch": {
+                                        "external_id": f"{ae_external_id}"
+                                    }
+                                }
+                            }
+
+                            activities = self.mongo_api_service.get_documents(
+                                collection_name=Collections.ACTIVITY.value,
+                                dataset_id=import_data.dataset_id,
+                                query=query_filter
+                            )
+
+                            if activities and len(activities) > 0:
+                                activity_doc = activities[0]
+                                activity_id = str(activity_doc.get("id", ""))
+                                print(
+                                    f"✅ Found activity by fallback: {activity_id} for AE external_id: {ae_external_id}")
+                                activity_res = self._find_by_id(activity_id, import_data.dataset_id, Collections.ACTIVITY)
+                                if activity_res:
+                                    print(f"�� activity_res type: {type(activity_res)}")
+                                    print(f"🔍 activity_res content: {activity_res}")
+                                    if isinstance(activity_res, dict) and "external_id" in activity_res and \
+                                            activity_res["external_id"]:
+                                        activity_source_id = str(activity_res["external_id"])
+                                        print(f"✅ Using external_id from activity_res (dict): {activity_source_id}")
+                                    elif hasattr(activity_res, 'external_id') and activity_res.external_id:
+                                        activity_source_id = str(activity_res.external_id)
+                                        print(f"✅ Using external_id from activity_res (object): {activity_source_id}")
+                                else:
+                                    print(f"❌ _find_by_id failed for activity_id: {activity_id}")
+                            else:
+                                print(f"❌ No Activity found in ActivityExecution {ae_id} nor by fallback")
+                                self._log_import_error(
+                                    import_id,
+                                    import_data.dataset_id,
+                                    "MISSING_ACTIVITY_IN_AE",
+                                    f"No co:hasActivity found in ActivityExecution {ae_id} nor by fallback",
+                                    ae_id
+                                )
+                                continue
+
 
                     # KROK 2.3: Sprawdź czy Activity istnieje w MongoDB
                     activity_mongo_id = self._find_activity_by_source_id(activity_source_id, import_data.dataset_id)
@@ -341,7 +379,7 @@ class ExperimentScenariosBuilder:
                         )
                         continue
 
-                    # Dodaj do listy Activities dla tego eksperymentu (z deduplikacją)
+                    # Dodaj do listy Activities dla tego eksperymentu (z duplikacją)
                     if activity_mongo_id not in [a["mongo_id"] for a in experiment_activities]:
                         experiment_activities.append({
                             "source_id": activity_source_id,
@@ -864,6 +902,7 @@ class ExperimentScenariosBuilder:
         """Znajduje Activity w MongoDB po source_id i zwraca jego MongoDB ID"""
         return self._find_by_source_id(source_id, dataset_id, Collections.ACTIVITY)
 
+
     def _find_by_source_id(self, source_id: str, dataset_id: str, collection: Collections) -> str:
         """
         Uniwersalna metoda do znajdowania dokumentów po source_id
@@ -885,6 +924,30 @@ class ExperimentScenariosBuilder:
 
         except Exception as e:
             print(f"❌ Error finding {collection.value} by source_id {source_id}: {e}")
+            return ""
+
+
+    def _find_by_id(self, id: str, dataset_id: str, collection: Collections) -> str:
+        """
+        Uniwersalna metoda do znajdowania dokumentów po source_id
+        """
+        try:
+            documents = self.mongo_api_service.get_documents(
+                collection_name=collection.value,
+                dataset_id=dataset_id,
+                query={"_id": id}
+            )
+
+            if documents:
+                found_id = str(documents[0].get("id", ""))
+                print(f"✅ Found {collection.value}: {id} -> MongoDB ID: {found_id}")
+                return documents[0]
+
+            print(f"❌ {collection.value} not found for _id: {id}")
+            return ""
+
+        except Exception as e:
+            print(f"❌ Error finding {collection.value} by _id {id}: {e}")
             return ""
 
     def _log_import_error(

@@ -6,7 +6,8 @@ from data_operations.file_operations_model import (
     FileOperationIn,
     FileOperationOut,
     FileOperationError,
-    OperationStatus
+    OperationStatus,
+    OperationType
 )
 from mongo_service.mongo_api_service import MongoApiService
 from mongo_service.service_mixins import GenericMongoServiceMixin
@@ -54,7 +55,6 @@ class FileOperationsStatusService(GenericMongoServiceMixin):
                 "additional_data": operation_data.additional_data or {}
             }
 
-            # Pozwól MongoDB wygenerować ObjectId automatycznie
             created_id = self.mongo_api_service.create_document_from_dict(
                 operation_record_data,
                 Collections.FILE_OPERATIONS.value,
@@ -62,7 +62,7 @@ class FileOperationsStatusService(GenericMongoServiceMixin):
             )
             
             print(f"✅ File operation created with ID: {created_id}")
-            return created_id  # Zwróć ObjectId jako string
+            return created_id
             
         except Exception as e:
             print(f"❌ Error creating file operation: {str(e)}")
@@ -191,20 +191,24 @@ class FileOperationsStatusService(GenericMongoServiceMixin):
                 error_messages=[f"Error retrieving status: {str(e)}"]
             )
 
-    def get_operations_by_dataset_id(self, dataset_id: str) -> List[FileOperationOut]:
+    def get_operations_by_dataset_id(self, dataset_id: str, operation_type: Optional[OperationType] = None) -> List[FileOperationOut]:
         """
-        Pobiera wszystkie operacje dla danego ID datasetu
+        Pobiera operacje dla danego ID datasetu z opcjonalną filtracją po typie
         
         Args:
             dataset_id: ID datasetu
+            operation_type: Opcjonalny typ operacji do filtrowania (import/export)
             
         Returns:
             Lista operacji
         """
-        print(f"📋 Fetching all operations for dataset: {dataset_id}")
+        print(f"📋 Fetching operations for dataset: {dataset_id}" + (f" (type: {operation_type.value})" if operation_type else ""))
         
         try:
             query = {"dataset_id": dataset_id}
+            if operation_type:
+                query["operation_type"] = operation_type.value
+                
             operation_docs = self.mongo_api_service.get_documents(
                 collection_name=Collections.FILE_OPERATIONS.value,
                 dataset_id=dataset_id,
@@ -212,16 +216,29 @@ class FileOperationsStatusService(GenericMongoServiceMixin):
             )
 
             if not operation_docs:
-                print(f"ℹ️ No operations found for dataset: {dataset_id}")
+                print(f"ℹ️ No operations found for dataset: {dataset_id}" + (f" with type: {operation_type.value}" if operation_type else ""))
                 return []
 
             operations_list = [FileOperationOut(**doc) for doc in operation_docs]
-            print(f"✅ Found {len(operations_list)} operations for dataset: {dataset_id}")
+            print(f"✅ Found {len(operations_list)} operations for dataset: {dataset_id}" + (f" with type: {operation_type.value}" if operation_type else ""))
             return operations_list
 
         except Exception as e:
             print(f"❌ Error fetching operations for dataset {dataset_id}: {str(e)}")
             return []
+
+    def get_operations_by_dataset_id_and_type(self, dataset_id: str, operation_type: OperationType) -> List[FileOperationOut]:
+        """
+        Pobiera operacje dla danego ID datasetu i typu operacji
+        
+        Args:
+            dataset_id: ID datasetu
+            operation_type: Typ operacji do filtrowania (import/export)
+            
+        Returns:
+            Lista operacji danego typu
+        """
+        return self.get_operations_by_dataset_id(dataset_id, operation_type)
 
     def log_error(self, operation_uuid: str, dataset_id: str, error_type: str, 
                   error_message: str, entity_str: str = None, context: Dict[str, Any] = None) -> bool:

@@ -86,6 +86,7 @@ class Collections(str, Enum):
     SCENARIO = "scenarios"
     TIME_SERIES = "timeSeries"
     FILES = "files"
+    EXPORT_FILES = "export_files"
 
 
 SUPERCLASSES_TO_COLLECTION_NAMES = {

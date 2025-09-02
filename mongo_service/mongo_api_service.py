@@ -50,10 +50,15 @@ class MongoApiService:
         """
         Create new document from a dictionary. Id fields are converted to ObjectId type.
         """
+        if dataset_id == "":
+            dataset_id = mongo_database_name
+            
         self._fix_input_ids(document_dict)
         db = self.client[dataset_id]
         created_id = db[collection_name].insert_one(document_dict).inserted_id
         return str(created_id)
+
+
 
 
     def get_document(self, id: Union[str, int], collection_name: str, dataset_id: Union[int, str], *args, **kwargs):

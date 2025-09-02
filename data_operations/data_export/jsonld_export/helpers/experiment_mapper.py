@@ -88,19 +88,7 @@ class ExperimentJsonLdHelper(BaseJsonLdHelper):
                 if prop.get("key") == "creator" and prop.get("value"):
                     properties["co:hasCreator"] = prop["value"]
                     break
-        # if "_scenarios" in entity_doc and entity_doc["_scenarios"]:
-        #     scenarios_list = []
-        #     for scenario in entity_doc["_scenarios"]:
-        #         scenario_mapped = {
-        #             "@id": f"{scenario['id']}",
-        #             "co:hasActivityExecutions": [
-        #                 {"@id": f"co:{ae_id}"}
-        #                 for ae_list in scenario["activity_executions"]
-        #                 for ae_id in ae_list
-        #             ]
-        #         }
-        #         scenarios_list.append(scenario_mapped)
-        #     properties["co:hasScenario"] = scenarios_list
+
         if "_scenarios" in entity_doc and entity_doc["_scenarios"]:
             all_activity_execution_ids = []
 
