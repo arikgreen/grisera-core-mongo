@@ -8,10 +8,11 @@ from services.mongo_services import MongoServiceFactory
 
 
 class MeasureConverter(BaseEntityConverter[MeasureIn]):
-    JSON_KEY_CANDIDATES_FOR_DATATYPE = ["measureDatatype", "hasDatatype", "datatype"]  # Czyste klucze
-    JSON_KEY_CANDIDATES_FOR_RANGE = ["measureRange", "hasRange", "range"]  # Czyste klucze
-    JSON_KEY_CANDIDATES_FOR_UNIT = ["measureUnit", "hasUnit", "unit"]  # Czyste klucze
-    JSON_KEY_CANDIDATES_FOR_MEASURE_NAME_ID = ["hasMeasureName", "measure_name_id", "measureNameId"]  # Czyste klucze
+    JSON_KEY_CANDIDATES_FOR_DATATYPE = ["measureDatatype", "hasDatatype", "datatype"]
+    JSON_KEY_CANDIDATES_FOR_RANGE = ["measureRange", "hasRange", "range"]
+    JSON_KEY_CANDIDATES_FOR_UNIT = ["measureUnit", "hasUnit", "unit"]
+    JSON_KEY_CANDIDATES_FOR_MEASURE_NAME_ID = ["hasMeasureName", "measure_name_id", "measureNameId"]
+    JSON_KEY_CANDIDATES_FOR_MEASURE_NAME = ["hasName", "name"]
     DEFAULT_MAIN_FIELD_PREFIX = "Measure"
     
     
@@ -24,19 +25,15 @@ class MeasureConverter(BaseEntityConverter[MeasureIn]):
         external_id = self._get_external_id(json_entity)
 
         # Wyciągnij datatype - pole wymagane
-        datatype = self._get_main_field_value(
+        datatype = self._get_optional_field_value(
             json_entity,
-            self.JSON_KEY_CANDIDATES_FOR_DATATYPE,
-            "float",  # domyślna wartość
-            entity_id_str_for_fallback=external_id
+            self.JSON_KEY_CANDIDATES_FOR_DATATYPE
         )
         
         # Wyciągnij range - pole wymagane
-        range_value = self._get_main_field_value(
+        range_value = self._get_optional_field_value(
             json_entity,
-            self.JSON_KEY_CANDIDATES_FOR_RANGE,
-            "unknown",  # domyślna wartość
-            entity_id_str_for_fallback=external_id
+            self.JSON_KEY_CANDIDATES_FOR_RANGE
         )
         
         # Wyciągnij unit - pole wymagane, ale może nie być w JSON
@@ -68,7 +65,36 @@ class MeasureConverter(BaseEntityConverter[MeasureIn]):
             print(f"📝 Creating MeasureIn: name='{clean_name_for_log}', datatype='{datatype}', range='{range_value}', unit='{unit}', measure_name_id='{measure_name_id}', external_id='{measure.external_id}', import_job_id='{measure.import_job_id}', properties={len(additional_properties)} (including common)")
 
         return measure
-    
+
+    def _extract_measure_name_from_json(self, json_entity: Dict[str, Any]) -> Optional[str]:
+        """
+        Wyciąga nazwę measure z zagnieżdżonego obiektu hasMeasureName.
+        Zwraca nazwę measure (np. "Familiarity") z pola hasName.
+        """
+        # Sprawdź co:hasMeasureName (zagnieżdżony obiekt)
+        for clean_candidate_key in self.JSON_KEY_CANDIDATES_FOR_MEASURE_NAME_ID:
+            for entity_key_with_prefix, entity_value in json_entity.items():
+                if remove_prefix(entity_key_with_prefix) == clean_candidate_key:
+                    # To jest hasMeasureName - wyciągnij hasName
+                    if isinstance(entity_value, list) and len(entity_value) > 0:
+                        # Jeśli to lista, weź pierwszy element
+                        measure_name_obj = entity_value[0]
+                        if isinstance(measure_name_obj, dict) and "hasName" in measure_name_obj:
+                            measure_name = measure_name_obj["hasName"]
+                            if DEBUG:
+                                print(f"✅ Found MeasureName from {entity_key_with_prefix}: {measure_name}")
+                            return measure_name
+                    elif isinstance(entity_value, dict) and "hasName" in entity_value:
+                        # Jeśli to pojedynczy obiekt
+                        measure_name = entity_value["hasName"]
+                        if DEBUG:
+                            print(f"✅ Found MeasureName from {entity_key_with_prefix}: {measure_name}")
+                        return measure_name
+
+        if DEBUG:
+            print("⚠️ No MeasureName found in Measure")
+        return None
+
     def _extract_measure_name_id_from_json(self, json_entity: Dict[str, Any]) -> Optional[str]:
         """
         Wyciąga MeasureName ID z JSON z zagnieżdżonej struktury co:hasMeasureName.
@@ -101,13 +127,13 @@ class MeasureConverter(BaseEntityConverter[MeasureIn]):
         """
         Konwertuje i zapisuje Measure.
         """
-        return self._save_measure_with_mapping(self.convert(json_entity), dataset_id, import_id)
+        return self._save_measure_with_mapping(self.convert(json_entity), dataset_id, import_id, self._extract_measure_name_from_json(json_entity))
 
     def find_by_source_id(self, source_id: str, dataset_id: str) -> str:
         return self._find_by_source_id(source_id, dataset_id, Collections.MEASURE)
 
     
-    def _save_measure_with_mapping(self, grisera_object, dataset_id: str, import_id: str):
+    def _save_measure_with_mapping(self, grisera_object, dataset_id: str, import_id: str, clean_name: str = None) -> Optional[MeasureIn]:
         """
         Zapisuje Measure z mapowaniem measure_name_id z source ID na MongoDB ID.
         """
@@ -123,8 +149,7 @@ class MeasureConverter(BaseEntityConverter[MeasureIn]):
                 if DEBUG:
                     print(f"✅ Mapped measure_name_id: {grisera_object.measure_name_id} -> {measure_name_mongo_id}")
             else:
-                measure_name_mongo_id = self._find_or_create_measure_name_by_name(
-                    measure_name_source_id, dataset_id, import_id
+                measure_name_mongo_id = self._find_or_create_measure_name_by_name(measure_name_source_id, dataset_id, import_id, clean_name
                 )
 
                 if measure_name_mongo_id:
@@ -160,7 +185,7 @@ class MeasureConverter(BaseEntityConverter[MeasureIn]):
             print(f"❌ Error saving Measure with mapping: {e}")
             raise e
     def _find_or_create_measure_name_by_name(self, measure_name_source_id: str, dataset_id: str,
-                                             import_id: str) -> str:
+                                             import_id: str, clean_name_ex: str) -> str:
         """
         Znajduje MeasureName po nazwie (case-insensitive) lub tworzy nowy.
 
@@ -173,7 +198,7 @@ class MeasureConverter(BaseEntityConverter[MeasureIn]):
             MongoDB ID dla MeasureName lub None jeśli nie udało się utworzyć
         """
         try:
-            clean_name = self._extract_clean_measure_name(measure_name_source_id)
+            clean_name = clean_name_ex if clean_name_ex else self._extract_clean_measure_name(measure_name_source_id)
             if DEBUG:
                 print(
                     f"🔍 Searching for MeasureName with clean name: '{clean_name}' (from source: '{measure_name_source_id}')")

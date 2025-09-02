@@ -4,6 +4,7 @@ from mongo_service.mongo_api_service import MongoApiService
 from mongo_service.collection_mapping import Collections
 from data_operations.entity_type_mapping import EntityTypeMapping
 
+DEBUG=True
 
 class BaseJsonLdHelper(ABC):
     """
@@ -84,6 +85,9 @@ class BaseJsonLdHelper(ABC):
         Tworzy podstawową strukturę JSON z id i type.
         Każdy helper może to rozszerzyć o specyficzne pola.
         """
+        if DEBUG:
+            print(f"🔍 [DEBUG] _create_basic_json_structure - Full entity_doc: {entity_doc}")
+        
         entity_id = self._extract_entity_id(entity_doc)
         
         return {

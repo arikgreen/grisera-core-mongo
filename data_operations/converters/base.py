@@ -170,7 +170,6 @@ class BaseEntityConverter(ABC, Generic[GriseraInType]):
             remove_prefix("rdf:type")
         }
 
-        # Upewnij się, że processed_clean_keys są czyste i unikalne
         user_excluded_clean_keys = set(remove_prefix(k) for k in (processed_clean_keys or []))
         final_excluded_clean_keys = default_excluded_clean_keys.union(user_excluded_clean_keys)
 
@@ -183,10 +182,6 @@ class BaseEntityConverter(ABC, Generic[GriseraInType]):
                     for item in value:
                         if isinstance(item, (str, int, float, bool)):
                             properties_list.append(PropertyIn(key=clean_key, value=str(item)))
-                        # Można dodać obsługę serializacji bardziej złożonych elementów listy
-                        # np. elif isinstance(item, dict): properties_list.append(PropertyIn(key=clean_key, value=json.dumps(item)))
-                # Można dodać obsługę serializacji zagnieżdżonych słowników
-                # np. elif isinstance(value, dict): properties_list.append(PropertyIn(key=clean_key, value=json.dumps(value)))
 
     def _extract_nested_entity_id(self, entity_value: Any) -> Optional[str]:
         """
