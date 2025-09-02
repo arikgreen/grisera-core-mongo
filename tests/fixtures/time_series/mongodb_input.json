@@ -1,0 +1,72 @@
+{
+  "timestamp": "1970-01-01 00:00:01",
+  "metadata": {
+    "additional_properties": [
+      {
+        "key": "spacing",
+        "value": "Irregular"
+      }
+    ],
+    "external_id": null,
+    "id": "68b6dc6379acd6b915b0e17d",
+    "import_job_id": null,
+    "import_timestamp": null,
+    "measure_id": "68b6dbec79acd6b915b0e15a",
+    "observable_information_id": null,
+    "observable_information_ids": [
+      "68b6dc6379acd6b915b0e17c"
+    ],
+    "source": "6044242f-f69b-4954-ae20-72e4bc10768a/test.png",
+    "type": "Epoch"
+  },
+  "end_timestamp": "1970-01-01 00:00:02",
+  "value": 1,
+  "_id": "68b6dc6379acd6b915b0e17e",
+  "additional_properties": null,
+  "related_recordings": [
+    {
+      "_id": "68b6dc4f79acd6b915b0e17b",
+      "participation_id": "68b6dc3d79acd6b915b0e178",
+      "registered_channel_id": "68b6dc4f79acd6b915b0e17a",
+      "additional_properties": [],
+      "observable_informations": [
+        {
+          "id": "68b6dc6379acd6b915b0e17c",
+          "modality_id": "68b6dbec79acd6b915b0e141",
+          "life_activity_id": "68b6dbec79acd6b915b0e14f",
+          "recording_id": "68b6dc4f79acd6b915b0e17b"
+        }
+      ]
+    }
+  ],
+  "related_participations": [
+    {
+      "_id": "68b6dc3d79acd6b915b0e178",
+      "activity_execution_id": "68b6dc3679acd6b915b0e176",
+      "participant_state_id": "68b6dc3d79acd6b915b0e177"
+    }
+  ],
+  "related_participants": [
+    {
+      "_id": "68b6dc0179acd6b915b0e171",
+      "name": "Arkadiusz Tepper",
+      "sex": "Male",
+      "participant_states": [
+        {
+          "participant_id": "68b6dc0179acd6b915b0e171",
+          "id": "68b6dc3d79acd6b915b0e177",
+          "additional_properties": []
+        }
+      ]
+    }
+  ],
+  "related_measures": [
+    {
+      "_id": "68b6dbec79acd6b915b0e15a",
+      "measure_name_id": "68b6dbec79acd6b915b0e159",
+      "datatype": "string",
+      "range": null,
+      "values": ["Absent", "Mild", "Moderate", "Intense"]
+    }
+  ]
+}

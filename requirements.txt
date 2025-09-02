@@ -8,3 +8,4 @@ pydantic~=1.10.6
 starlette~=0.26.1
 rdflib~=6.3.2
 debugpy
+pytest~=8.4.1
