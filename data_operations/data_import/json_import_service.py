@@ -81,6 +81,18 @@ class JsonImportService:
                 if not import_data.experiment_id:
                     import_data.experiment_id = experiment_id
 
+            # Count total TimeSeries for progress tracking
+            total_time_series = 0
+            for json_key in json_data.keys():
+                normalized_key = remove_prefix(json_key)
+                if normalized_key == "TimeSeries" and isinstance(json_data[json_key], list):
+                    total_time_series = len(json_data[json_key])
+                    break
+            
+            if total_time_series > 0:
+                self.file_ops_service.set_total_count(import_id, import_data.dataset_id, "total_time_series", total_time_series)
+                print(f"📊 Total TimeSeries to import: {total_time_series}")
+
             entity_order = EntityTypeMapping.get_import_order()
             print(f"📋 Processing {len(entity_order)} entity types in dependency order...")
 

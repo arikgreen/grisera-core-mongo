@@ -1,21 +1,16 @@
 from typing import List, Optional
 import threading
 
-from data_operations.file_operations_service import FileOperationsStatusService
-from data_operations.file_operations_model import FileOperationIn, OperationType
 from data_operations.data_import.json_import_service import JsonImportService
 from data_operations.data_import.owl_import_service import OwlImportService
-
 from data_operations.file_operations_model import (
     FileOperationIn,
     FileOperationOut,
-    FileOperationError,
     OperationStatus
 )
+from data_operations.file_operations_model import OperationType
+from data_operations.file_operations_service import FileOperationsStatusService
 from mongo_service.service_mixins import GenericMongoServiceMixin
-
-from services.mongo_services import MongoServiceFactory
-
 
 
 class DataImportServiceMongoDB(GenericMongoServiceMixin):
@@ -42,6 +37,16 @@ class DataImportServiceMongoDB(GenericMongoServiceMixin):
                 0,
                 0
             )
+
+            # Retrieve file content from MinIO if needed
+            if not import_data.file_content:
+                print(f"📁 Retrieving file content from MinIO for import ID: {import_id}")
+                file_content = self.file_ops_service.get_file_content_from_minio(import_id, import_data.dataset_id)
+                if file_content:
+                    import_data.file_content = file_content
+                    print(f"✅ File content retrieved from MinIO ({len(file_content)} bytes)")
+                else:
+                    raise ValueError("Could not retrieve file content from MinIO")
 
             imported_count = self._process_import_data(
                 import_data,
@@ -112,15 +117,17 @@ class DataImportServiceMongoDB(GenericMongoServiceMixin):
             return self.file_ops_service.get_operation_status(import_id)
 
     def create_import_operation(self, import_data):
+        # Create file operation with file_content - it will be uploaded to MinIO automatically
         file_operation = FileOperationIn(
             file_name=import_data.file_name,
             operation_type=OperationType.IMPORT,
             dataset_id=import_data.dataset_id,
             description=import_data.description,
             experiment_id=import_data.experiment_id,
+            file_content=import_data.file_content,  # This will be uploaded to MinIO
+            file_type=import_data.file_type,
             additional_data={
-                "file_type": import_data.file_type,
-                "file_content": import_data.file_content if hasattr(import_data, 'file_content') else None
+                "file_type": import_data.file_type
             }
         )
         import_id = self.file_ops_service.create_operation(file_operation)
@@ -137,14 +144,14 @@ class DataImportServiceMongoDB(GenericMongoServiceMixin):
     def get_imports_by_dataset_id(self, dataset_id: str, operation_type: Optional[OperationType] = None) -> List[FileOperationOut]:
         """
         Pobiera importy dla danego ID datasetu.
-        
+
         Args:
             dataset_id: ID datasetu
             operation_type: Opcjonalny typ operacji (domyślnie IMPORT)
         """
         if operation_type is None:
             operation_type = OperationType.IMPORT
-            
+
         print(f"🔍 Fetching {operation_type.value} operations for dataset ID: {dataset_id}")
         try:
             file_operations = self.file_ops_service.get_operations_by_dataset_id(dataset_id, operation_type)
@@ -177,7 +184,6 @@ class DataImportServiceMongoDB(GenericMongoServiceMixin):
             error_msg = f"Unsupported import type: {import_data.file_type}"
             print(f"❌ {error_msg} (Import ID: {import_id})")
             raise ValueError(error_msg)
-
 
     def _get_error_count(self, import_id: str, dataset_id: str) -> int:
         """

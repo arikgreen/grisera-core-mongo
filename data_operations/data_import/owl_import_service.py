@@ -1,11 +1,15 @@
 import json
-from rdflib import Graph, RDF, RDFS, URIRef
 from collections import defaultdict
 from typing import Dict, Any
-from data_operations.file_operations_model import FileOperationIn, OperationType
+
+from rdflib import Graph, RDF, RDFS, URIRef
+
+from data_operations.file_operations_model import FileOperationIn
 from data_operations.utils import decode_file_content
 
 DEBUG = True
+
+
 class OwlImportService:
     """
     Serwis dedykowany do importu danych OWL.
@@ -32,10 +36,13 @@ class OwlImportService:
             print(f"✅ OWL converted to JSON: {len(json_data)} classes found")
 
         # 2. Przygotowanie danych dla JsonImportService
+        # Convert to JSON string for processing
+        json_content = json.dumps(json_data, ensure_ascii=False, indent=2)
+
         json_import_data = FileOperationIn(
             file_name=f"{import_data.file_name}_converted.json",
             file_type="application/json",
-            file_content=json.dumps(json_data, ensure_ascii=False, indent=2),
+            file_content=json_content,  # This will be uploaded to MinIO automatically
             operation_type=import_data.operation_type,
             dataset_id=import_data.dataset_id,
             description=f"Converted from OWL: {import_data.description or import_data.file_name}",
@@ -43,7 +50,8 @@ class OwlImportService:
             additional_data={
                 "original_format": "owl",
                 "original_filename": import_data.file_name,
-                **(import_data.additional_data or {})
+                "converted_content_size": len(json_content),
+                **(import_data.additional_data or {} if import_data.additional_data else {})
             }
         )
         if DEBUG:
