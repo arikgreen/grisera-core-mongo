@@ -1,0 +1,13 @@
+{
+  "@id": "68b78de602c86d0842d2664c",
+  "co:hasRegisteredData": [
+    {
+      "@id": "68b78de502c86d0842d2661a"
+    }
+  ],
+  "co:hasChannel": [
+    {
+      "@id": "68b78dd502c86d0842d265ce"
+    }
+  ]
+}

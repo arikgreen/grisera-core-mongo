@@ -1,0 +1,23 @@
+{
+  "_id": "68b78de602c86d0842d2664c",
+  "additional_properties": null,
+  "channel_id": "68b78dd502c86d0842d265ce",
+  "external_id": ":rcP09UL",
+  "import_job_id": "68b78de202c86d0842d2660c",
+  "import_timestamp": "2025-09-03T00:37:58.373Z",
+  "registered_data_id": "68b78de502c86d0842d2661a",
+  "related_channels": [
+    {
+      "_id": "68b78dd502c86d0842d265ce",
+      "name": "channelAudio",
+      "type": "audio"
+    }
+  ],
+  "related_registered_data": [
+    {
+      "_id": "68b78de502c86d0842d2661a",
+      "external_id": ":rdP09UL",
+      "data_type": "sensor"
+    }
+  ]
+}
