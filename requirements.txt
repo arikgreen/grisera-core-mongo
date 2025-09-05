@@ -1,3 +1,5 @@
+--extra-index-url https://test.pypi.org/simple/
+
 fastapi~=0.94.1
 uvicorn[standard]
 requests~=2.28.2
@@ -6,6 +8,7 @@ mongomock~=4.1.2
 pymongo~=4.3.3
 pydantic~=1.10.6
 starlette~=0.26.1
+grisera2==0.0.39.6
 rdflib~=6.3.2
 debugpy
 pytest~=8.4.1

@@ -4,20 +4,17 @@ name: Docker deploy
 # They are provided by a third-party and are governed by
 # separate terms of service, privacy policy, and support
 # documentation.
-
 on:
   push:
-    branches: [ "development_1.x" ]
+    branches: [ "development_2.1" ]
     # Publish semver tags as releases.
     tags: [ 'v*.*.*' ]
   pull_request:
-    branches: [ "development_1.x" ]
+    branches: [ "development_2.1" ]
 
 env:
-  # Use docker.io for Docker Hub if empty
-  REGISTRY: docker.io
-  # github.repository as <account>/<repo>
-  IMAGE_NAME: "grisera_core_mongo"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 
 jobs:
@@ -56,8 +53,8 @@ jobs:
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Bump version and push tag
         if: github.event_name != 'pull_request'
@@ -66,7 +63,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.THIS_GITHUB_TOKEN }}
           DEFAULT_BRANCH: ${{ github.ref_name }}
-          DEFAULT_BUMP: minor
+          DEFAULT_BUMP: patch
           WITH_V: true
 
       # Extract metadata (tags, labels) for Docker
@@ -75,7 +72,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: type=semver,pattern={{version}},value=${{ steps.version_bump.outputs.new_tag }}
 
       # Build and push Docker image with Buildx (don't push on PR)
