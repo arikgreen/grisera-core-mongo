@@ -5,6 +5,7 @@ debugpy
 fastapi-utils
 fastapi~=0.94.1
 grisera==2.1.9
+minio~=7.1.0
 mongomock~=4.1.2
 pydantic~=1.10.6
 pymongo~=4.3.3
