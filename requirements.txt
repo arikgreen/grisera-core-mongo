@@ -8,7 +8,7 @@ mongomock~=4.1.2
 pymongo~=4.3.3
 pydantic~=1.10.6
 starlette~=0.26.1
-grisera==0.0.39.7
+grisera==2.1.9
 rdflib~=6.3.2
 debugpy
 pytest~=8.4.1
