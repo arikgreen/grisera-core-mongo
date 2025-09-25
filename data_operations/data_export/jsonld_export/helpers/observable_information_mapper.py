@@ -185,7 +185,7 @@ class ObservableInformationJsonLdHelper(BaseJsonLdHelper):
         
         db = self.mongo_api_service.client[dataset_id]
         entities = list(db[collection_name].aggregate(aggregation))
-        
+
         # Convert ObjectIds to strings to avoid JSON serialization issues
         for entity in entities:
             self.mongo_api_service._fix_output_ids(entity)
@@ -196,105 +196,14 @@ class ObservableInformationJsonLdHelper(BaseJsonLdHelper):
     def map_to_json(self, entity_doc: Dict[str, Any]) -> Dict[str, Any]:
         """Mapuje ObservableInformation z MongoDB na JSON-LD z zagnieżdżonymi elementami"""
         base_structure = self._create_basic_json_structure(entity_doc)
-        
-        properties = {}
-        
-        # Mapuj zagnieżdżone Recording
-        if "_parent_recording" in entity_doc and entity_doc["_parent_recording"]:
-            parent_recording = entity_doc["_parent_recording"]
-            recording_obj = {
-                "@id": f"{parent_recording['_id']}"
-            }
-            
-            # Dodaj zagnieżdżone Participations
-            if "related_participations" in entity_doc and entity_doc["related_participations"]:
-                participations = []
-                for participation in entity_doc["related_participations"]:
-                    if participation["_id"] == parent_recording.get("participation_id"):
-                        participation_obj = {
-                            "@id": f"{participation['_id']}"
-                        }
-                        
-                        # Dodaj ActivityExecution
-                        if "activity_execution_id" in participation and participation["activity_execution_id"]:
-                            activity_exec_obj = {
-                                "@id": f"{participation['activity_execution_id']}"
-                            }
-                            
-                            # Znajdź powiązane activity_id i dodaj co:hasActivity
-                            if "related_activity_executions" in entity_doc:
-                                for activity_exec in entity_doc["related_activity_executions"]:
-                                    if activity_exec.get("id") == participation["activity_execution_id"]:
-                                        activity_id = activity_exec.get("activity_id")
-                                        if activity_id:
-                                            activity_obj = {"@id": f"{activity_id}"}
-                                            activity_exec_obj["co:hasActivity"] = [activity_obj]
-                                        break
-                            
-                            participation_obj["co:hasActivityExecution"] = [activity_exec_obj]
-                        
-                        # Dodaj ParticipantState
-                        if "related_participants" in entity_doc:
-                            for participant in entity_doc["related_participants"]:
-                                if "participant_states" in participant:
-                                    for state in participant["participant_states"]:
-                                        if state["id"] == participation.get("participant_state_id"):
-                                            state_obj = {
-                                                "@id": f"{state['id']}"
-                                            }
-                                            
-                                            # Dodaj Participant
-                                            participant_obj = {
-                                                "@id": f"{participant['_id']}"
-                                            }
-                                            if "sex" in participant and participant["sex"]:
-                                                participant_obj["co:hasSex"] = [{"@id": f"co:sex{participant['sex']}"}]
-                                            
-                                            state_obj["co:hasParticipant"] = [participant_obj]
-                                            participation_obj["co:hasParticipantState"] = [state_obj]
-                        
-                        participations.append(participation_obj)
-                
-                if participations:
-                    recording_obj["co:hasParticipation"] = participations
-            
-            # Dodaj zagnieżdżone RegisteredChannels
-            if "related_registered_channels" in entity_doc and entity_doc["related_registered_channels"]:
-                registered_channels = []
-                for reg_channel in entity_doc["related_registered_channels"]:
-                    if reg_channel["_id"] == parent_recording.get("registered_channel_id"):
-                        reg_channel_obj = {
-                            "@id": f"{reg_channel['_id']}"
-                        }
-                        
-                        # Dodaj zagnieżdżone RegisteredData
-                        if reg_channel.get("registered_data_id"):
-                            reg_data_obj = {
-                                "@id": f"{reg_channel['registered_data_id']}"
-                            }
-                            reg_channel_obj["co:hasRegisteredData"] = [reg_data_obj]
-                        
-                        # Dodaj zagnieżdżone Channels
-                        if "related_channels" in entity_doc and entity_doc["related_channels"]:
-                            for channel in entity_doc["related_channels"]:
-                                if channel["_id"] == reg_channel.get("channel_id"):
-                                    channel_type = channel.get("type", "Unknown")
-                                    reg_channel_obj["co:hasChannel"] = [{"@id": f"co:channel{channel_type}"}]
-                        
-                        registered_channels.append(reg_channel_obj)
-                
-                if registered_channels:
-                    recording_obj["co:hasRegisteredChannel"] = registered_channels
-            
-            properties["co:hasRecording"] = [recording_obj]
 
-        # Mapuj Modality
+        if "recording_id" in entity_doc and entity_doc["recording_id"]:
+            base_structure["co:hasRecording"] = [self._create_id_object(entity_doc["recording_id"])]
+
         if "modality_id" in entity_doc and entity_doc["modality_id"]:
-            properties["co:hasModality"] = [{"@id": entity_doc["modality_id"]}]
+            base_structure["co:hasModality"] = [self._create_id_object(entity_doc["modality_id"])]
 
-        # Mapuj LifeActivity
         if "life_activity_id" in entity_doc and entity_doc["life_activity_id"]:
-            properties["co:hasLifeActivity"] = [{"@id": entity_doc["life_activity_id"]}]
-        
-        base_structure.update(properties)
+            base_structure["co:hasLifeActivity"] = [self._create_id_object(entity_doc["life_activity_id"])]
+
         return base_structure
