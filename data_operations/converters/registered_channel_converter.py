@@ -28,7 +28,7 @@ class RegisteredChannelConverter(BaseEntityConverter[RegisteredChannelIn]):
         
         # Wyciągnij RegisteredData ID z JSON - może być zagnieżdżony obiekt  
         registered_data_id = self._extract_registered_data_id_from_json(json_entity)
-        
+
         registered_channel = RegisteredChannelIn(
             channel_id=channel_id,
             registered_data_id=registered_data_id
@@ -116,8 +116,9 @@ class RegisteredChannelConverter(BaseEntityConverter[RegisteredChannelIn]):
 
                 # KROK 2: Mapuj registered_data_id z source ID na MongoDB ID
                 mapped_registered_data_id = grisera_object.registered_data_id
-                if grisera_object.registered_data_id and grisera_object.registered_data_id.startswith(":"):
-                    # To jest source ID, mapuj na MongoDB ID
+                # if grisera_object.registered_data_id and grisera_object.registered_data_id.startswith(":"):
+                if grisera_object.registered_data_id:
+                # To jest source ID, mapuj na MongoDB ID
                     registered_data_source_id = grisera_object.registered_data_id
                     registered_data_mongo_id = self.registered_data_service.find_by_source_id(registered_data_source_id,
                                                                                        dataset_id)

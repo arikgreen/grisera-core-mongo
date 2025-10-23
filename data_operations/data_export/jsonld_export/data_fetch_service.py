@@ -45,7 +45,7 @@ class DataFetchService:
             "RegisteredChannel": RegisteredChannelJsonLdHelper(),
             "RegisteredData": RegisteredDataJsonLdHelper(),
             "Channel": ChannelJsonLdHelper(),
-            # "Modality": ModalityJsonLdHelper(),
+            "Modality": ModalityJsonLdHelper(),
             "LifeActivity": LifeActivityJsonLdHelper(),
             "Arrangement": ArrangementJsonLdHelper(),
             "Appearance": AppearanceJsonLdHelper(),

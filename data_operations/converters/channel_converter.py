@@ -19,7 +19,7 @@ class ChannelConverter(BaseEntityConverter[ChannelIn]):
             entity_id_str_for_fallback=external_id
         )
         
-        channel = ChannelIn(channel_name=channel_name)
+        channel = ChannelIn(type=channel_name, description=channel_name)
 
         additional_properties = self._set_common_properties(json_entity, channel)
 
