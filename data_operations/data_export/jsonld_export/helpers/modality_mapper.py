@@ -30,11 +30,16 @@ class ModalityJsonLdHelper(BaseJsonLdHelper):
         return entities
     
     def map_to_json(self, entity_doc: Dict[str, Any]) -> Dict[str, Any]:
-        """Mapuje Modality z MongoDB na JSON"""
+        """Mapuje Modality z MongoDB na JSON-LD zgodnie z wymaganą strukturą"""
         base_structure = self._create_basic_json_structure(entity_doc)
-        
-        # TODO: Add specific Modality mappings
-        # - hasObservableInformation
-        # - modality properties
-        
+
+        properties = {}
+
+        # Pole modality używane zarówno jako nazwa jak i opis
+        if "modality" in entity_doc and entity_doc["modality"]:
+            modality_value = entity_doc["modality"]
+            properties["co:hasName"] = modality_value
+            properties["co:hasDescription"] = modality_value
+
+        base_structure.update(properties)
         return base_structure
