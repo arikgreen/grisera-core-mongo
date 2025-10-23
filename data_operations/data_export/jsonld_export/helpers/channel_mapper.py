@@ -23,19 +23,25 @@ class ChannelJsonLdHelper(BaseJsonLdHelper):
         """
         Pobiera Channel dla dataset_id z standardowej kolekcji.
         """
-        # print(f"🔍 Fetching {self.entity_type} from collection: {self.get_collection_enum().value}")
-        # entities = self._fetch_entities_from_collection_enum(dataset_id)
-        #
-        # print(f"✅ Found {len(entities)} {self.entity_type} entities")
-        # return entities
-        return [] # brak bezpośrednich Channel w owl
+        print(f"🔍 Fetching {self.entity_type} from collection: {self.get_collection_enum().value}")
+        entities = self._fetch_entities_from_collection_enum(dataset_id)
+
+        print(f"✅ Found {len(entities)} {self.entity_type} entities")
+        return entities
     
     def map_to_json(self, entity_doc: Dict[str, Any]) -> Dict[str, Any]:
-        """Mapuje Channel z MongoDB na JSON"""
+        """Mapuje Channel z MongoDB na JSON-LD zgodnie z wymaganą strukturą"""
         base_structure = self._create_basic_json_structure(entity_doc)
-        
-        # TODO: Add specific Channel mappings
-        # - hasRegisteredChannel
-        # - channel properties
-        
+
+        properties = {}
+
+        # Pole type używane jako nazwa kanału
+        if "type" in entity_doc and entity_doc["type"]:
+            properties["co:hasName"] = entity_doc["type"]
+
+        # Pole description używane jako opis kanału
+        if "description" in entity_doc and entity_doc["description"]:
+            properties["co:hasDescription"] = entity_doc["description"]
+
+        base_structure.update(properties)
         return base_structure
