@@ -132,7 +132,17 @@ class ParticipantServiceMongoDB(ParticipantService, GenericMongoServiceMixin):
         Returns:
             Result of request as participant object
         """
-        return self.update(participant_id, participant, dataset_id)
+        current_participant = self.get_single_dict(participant_id, dataset_id)
+        
+        if type(current_participant) is NotFoundByIdModel:
+            return current_participant
+        
+        updated_data = {
+            **current_participant,
+            **participant.dict()
+        }
+        
+        return self.update(participant_id, BasicParticipantOutToMongo(**updated_data), dataset_id)
 
     def add_participant_state(self, participant_state: ParticipantStateIn, dataset_id: Union[int, str]):
         participant_state_dict = participant_state.dict()
