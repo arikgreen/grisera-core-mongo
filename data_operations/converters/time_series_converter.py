@@ -8,9 +8,6 @@ from grisera import TimeSeriesIn
 from grisera.clients.minio_client import MinIOClient
 from grisera.file.file_service import FileService
 
-from .base import BaseEntityConverter, DEBUG
-from .measure_converter import MeasureConverter
-from .observable_information_converter import ObservableInformationConverter
 from data_operations.utils import remove_prefix
 from mongo_service.collection_mapping import Collections
 from services.mongo_services import MongoServiceFactory
@@ -180,7 +177,8 @@ class TimeSeriesConverter(BaseEntityConverter[TimeSeriesIn]):
         raw_entity_id = json_entity.get("@id")
         clean_entity_id_for_log = remove_prefix(str(raw_entity_id)) if raw_entity_id else "unknown_timeseries_id"
 
-        measure_id = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_MEASURE_ID)
+        measure_id = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_MEASURE_ID, perform_deep_lookup=True)
+
         if measure_id is None:
             print(f"ℹ️ Optional field 'measure_id' not found for TimeSeries '{clean_entity_id_for_log}'.")
 
