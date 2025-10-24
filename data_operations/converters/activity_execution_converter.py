@@ -1,5 +1,7 @@
 from typing import Dict, Any, Optional
 from grisera import ActivityExecutionIn, PropertyIn
+
+from . import ArrangementConverter
 from .base import BaseEntityConverter, DEBUG
 from data_operations.utils import remove_prefix
 from mongo_service.collection_mapping import Collections
@@ -19,6 +21,7 @@ class ActivityExecutionConverter(BaseEntityConverter[ActivityExecutionIn]):
     def __init__(self, import_id: str):
         super().__init__(import_id)
         self.activity_service = ActivityConverter(import_id)
+        self.arrangement_service = ArrangementConverter(import_id)
         self.services = MongoServiceFactory()
 
     def convert(self, json_entity: Dict[str, Any]) -> ActivityExecutionIn:
@@ -206,6 +209,21 @@ class ActivityExecutionConverter(BaseEntityConverter[ActivityExecutionIn]):
                         dataset_id,
                         "ACTIVITY_NOT_FOUND_FOR_AE",
                         f"Activity with source ID '{activity_source_id}' not found for ActivityExecution",
+                        source_entity_ref
+                    )
+
+                arrangement_source_id = grisera_object.arrangement_id
+                arrangement_mongo_id = self.arrangement_service.find_by_source_id(grisera_object.arrangement_id, dataset_id)
+
+                if arrangement_mongo_id:
+                    grisera_object.arrangement_id = arrangement_mongo_id
+                else:
+                    print(f"❌ Could not find Arrangement in MongoDB for source ID: {arrangement_source_id}")
+                    self._log_import_error(
+                        import_id,
+                        dataset_id,
+                        "ACTIVITY_NOT_FOUND_FOR_AE",
+                        f"Arrangement with source ID '{arrangement_source_id}' not found for ActivityExecution",
                         source_entity_ref
                     )
 
