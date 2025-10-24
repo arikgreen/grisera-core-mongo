@@ -8,13 +8,15 @@ from mongo_service.collection_mapping import Collections
 from services.mongo_services import MongoServiceFactory
 
 from .activity_converter import ActivityConverter
+from ..import_logger import get_import_logger
+
 
 class ActivityExecutionConverter(BaseEntityConverter[ActivityExecutionIn]):
     JSON_KEY_CANDIDATES_FOR_ACTIVITY_ID = ["hasActivity", "activity_id", "activityId"] # Czyste klucze
     JSON_KEY_CANDIDATES_FOR_ARRANGEMENT_ID = ["hasArrangement", "arrangement_id", "arrangementId"] # Czyste klucze
     JSON_KEY_CANDIDATES_FOR_NEXT_ID = ["hasNextActivityExecution", "nextActivityExecution", "next_activity_execution_id"] # Czyste klucze
     DEFAULT_MAIN_FIELD_PREFIX = "ActivityExecution"
-    
+
     # Klasowy licznik dla unikalnych nazw scenario execution
     _scenario_execution_counter = 0
 
@@ -29,7 +31,7 @@ class ActivityExecutionConverter(BaseEntityConverter[ActivityExecutionIn]):
 
         # Pobierz powiązane ID
         activity_id = self._extract_activity_id_from_json(json_entity)
-        arrangement_id = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_ARRANGEMENT_ID)
+        arrangement_id = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_ARRANGEMENT_ID, perform_deep_lookup=True)
         next_activity_execution_id = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_NEXT_ID)
 
         activity_execution = ActivityExecutionIn(
@@ -74,7 +76,7 @@ class ActivityExecutionConverter(BaseEntityConverter[ActivityExecutionIn]):
             print(f"📝 Creating ActivityExecutionIn: {activity_execution.__dict__} (including common)")
 
         return activity_execution
-    
+
     def _extract_activity_id_from_json(self, json_entity: Dict[str, Any]) -> Optional[str]:
         """
         Wyciąga Activity ID z JSON, mapuje go na MongoDB ID Activity lub zwraca source ID.
@@ -85,7 +87,7 @@ class ActivityExecutionConverter(BaseEntityConverter[ActivityExecutionIn]):
             if DEBUG:
                 print(f"✅ Found simple activity_id: {simple_activity_id}")
             return simple_activity_id
-        
+
         # Następnie sprawdź co:hasActivity (zagnieżdżony obiekt)
         for clean_candidate_key in self.JSON_KEY_CANDIDATES_FOR_ACTIVITY_ID:
             for entity_key_with_prefix, entity_value in json_entity.items():
@@ -96,11 +98,11 @@ class ActivityExecutionConverter(BaseEntityConverter[ActivityExecutionIn]):
                             print(f"✅ Found Activity source ID from {entity_key_with_prefix}: {activity_source_id}")
                         # Tutaj zapisujemy source ID, mapowanie na MongoDB ID zostanie zrobione przy zapisie
                         return activity_source_id
-        
+
         if DEBUG:
             print("⚠️ No Activity reference found in ActivityExecution")
         return None
-    
+
     def _extract_activity_source_id(self, activity_value: Any) -> Optional[str]:
         """
         Wyciąga source ID Activity z różnych formatów JSON.
@@ -116,7 +118,7 @@ class ActivityExecutionConverter(BaseEntityConverter[ActivityExecutionIn]):
         elif isinstance(activity_value, str):
             # Proste ID jako string
             return activity_value
-        
+
         return None
 
     def save(self, json_entity: Dict[str, Any], dataset_id: str, import_id: str) -> ActivityExecutionIn:
@@ -213,19 +215,23 @@ class ActivityExecutionConverter(BaseEntityConverter[ActivityExecutionIn]):
                     )
 
                 arrangement_source_id = grisera_object.arrangement_id
-                arrangement_mongo_id = self.arrangement_service.find_by_source_id(grisera_object.arrangement_id, dataset_id)
 
-                if arrangement_mongo_id:
-                    grisera_object.arrangement_id = arrangement_mongo_id
-                else:
-                    print(f"❌ Could not find Arrangement in MongoDB for source ID: {arrangement_source_id}")
-                    self._log_import_error(
-                        import_id,
-                        dataset_id,
-                        "ACTIVITY_NOT_FOUND_FOR_AE",
-                        f"Arrangement with source ID '{arrangement_source_id}' not found for ActivityExecution",
-                        source_entity_ref
-                    )
+                get_import_logger().log_info(f'🔍 Processing Arrangement ID: {arrangement_source_id} for ActivityExecution {source_entity_ref}')
+
+                if arrangement_source_id:
+                    arrangement_mongo_id = self.arrangement_service.find_by_source_id(grisera_object.arrangement_id, dataset_id)
+
+                    if arrangement_mongo_id:
+                        grisera_object.arrangement_id = arrangement_mongo_id
+                    else:
+                        print(f"❌ Could not find Arrangement in MongoDB for source ID: {arrangement_source_id}")
+                        self._log_import_error(
+                            import_id,
+                            dataset_id,
+                            "ACTIVITY_NOT_FOUND_FOR_AE",
+                            f"Arrangement with source ID '{arrangement_source_id}' not found for ActivityExecution",
+                            source_entity_ref
+                        )
 
                 if DEBUG:
                     print(f"✅ ActivityExecution being saved with final data: {grisera_object.__dict__}")
