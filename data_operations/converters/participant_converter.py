@@ -34,8 +34,8 @@ class ParticipantConverter(BaseEntityConverter[ParticipantIn]):
         # Wyciągnij pola specyficzne dla Participant
         raw_sex = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_SEX, perform_deep_lookup=True)
         sex = map_sex_value(raw_sex) if raw_sex else None
-        date_of_birth = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_DOB)
-        disorder = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_DISORDER)
+        date_of_birth = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_DOB, perform_deep_lookup=True)
+        disorder = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_DISORDER, perform_deep_lookup=True)
 
         # Utwórz obiekt ParticipantIn
         participant = ParticipantIn(

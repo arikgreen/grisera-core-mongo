@@ -56,7 +56,12 @@ class ParticipantJsonLdHelper(BaseJsonLdHelper):
             properties["co:hasName"] = entity_doc["name"]
 
         if "date_of_birth" in entity_doc and entity_doc["date_of_birth"]:
-            properties["co:hasDateOfBirth"] = self._create_id_object(entity_doc["date_of_birth"])
+            date_obj = entity_doc["date_of_birth"]
+            if hasattr(date_obj, 'strftime'):
+                date_str = date_obj.strftime('%Y-%m-%d')
+            else:
+                date_str = str(date_obj)[:10]
+            properties["co:hasDateOfBirth"] = self._create_id_object(date_str)
 
         if "sex" in entity_doc and entity_doc["sex"]:
             properties["co:hasSex"] = [self._create_id_object(entity_doc["sex"])]  # Lista z jednym obiektem
