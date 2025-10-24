@@ -12,7 +12,9 @@ class ActivityConverter(BaseEntityConverter[ActivityIn]):
     DEFAULT_MAIN_FIELD_PREFIX = "Activity"
 
     def convert(self, json_entity: Dict[str, Any]) -> ActivityIn:
-        activity_type = "individual"  # TODO: zmienić na wyciąganie z JSON
+        activity_type = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_MAIN_FIELD)
+        if not activity_type:
+            activity_type = "individual"
 
         activity = ActivityIn(activity=activity_type)
 
