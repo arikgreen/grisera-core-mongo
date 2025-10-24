@@ -30,7 +30,8 @@ class ActivityConverter(BaseEntityConverter[ActivityIn]):
 
         description = self._get_optional_field_value(json_entity, self.JSON_KEY_CANDIDATES_FOR_DESCRIPTION_FIELD)
 
-        additional_properties.append(PropertyIn(key="description", value=description if description else f"Activity description {random.randint(1, 1000)}"))
+        if description:
+            additional_properties.append(PropertyIn(key="description", value=description))
 
         processed_clean_keys = []
         processed_clean_keys.extend(self.JSON_KEY_CANDIDATES_FOR_MAIN_FIELD)
