@@ -23,12 +23,10 @@ class ArrangementJsonLdHelper(BaseJsonLdHelper):
         """
         Pobiera Arrangement dla dataset_id z standardowej kolekcji.
         """
-        # print(f"🔍 Fetching {self.entity_type} from collection: {self.get_collection_enum().value}")
-        # entities = self._fetch_entities_from_collection_enum(dataset_id)
-        #
-        # print(f"✅ Found {len(entities)} {self.entity_type} entities")
-        # return entities
-        return [] # brak bezpośrednich Arrangement w owl
+        print(f"🔍 Fetching {self.entity_type} from collection: {self.get_collection_enum().value}")
+        entities = self._fetch_entities_from_collection_enum(dataset_id)
+        print(f"✅ Found {len(entities)} {self.entity_type} entities")
+        return entities
 
     def map_to_json(self, entity_doc: Dict[str, Any]) -> Dict[str, Any]:
         """Mapuje Arrangement z MongoDB na JSON"""
@@ -40,6 +38,10 @@ class ArrangementJsonLdHelper(BaseJsonLdHelper):
         # Mapuj arrangement_type
         if "arrangement_type" in entity_doc and entity_doc["arrangement_type"]:
             properties["co:hasArrangementType"] = entity_doc["arrangement_type"]
+
+        # Mapuj arrangement_distance
+        if "arrangement_distance" in entity_doc and entity_doc["arrangement_distance"]:
+            properties["co:hasDistance"] = entity_doc["arrangement_distance"]
 
         # Mapuj name z additional_properties
         if "additional_properties" in entity_doc and entity_doc["additional_properties"]:
