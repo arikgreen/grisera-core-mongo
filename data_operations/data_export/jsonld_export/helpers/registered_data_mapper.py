@@ -40,5 +40,16 @@ class RegisteredDataJsonLdHelper(BaseJsonLdHelper):
         if "source" in entity_doc and entity_doc["source"]:
             properties["co:registeredDataSource"] = entity_doc["source"]
 
+        # Wyodrębnij name i description z additional_properties
+        if "additional_properties" in entity_doc and entity_doc["additional_properties"]:
+            for prop in entity_doc["additional_properties"]:
+                prop_key = prop.get("key")
+                prop_value = prop.get("value")
+
+                if prop_key == "name" and prop_value is not None:
+                    properties["co:hasName"] = prop_value
+                elif prop_key == "description" and prop_value is not None:
+                    properties["co:hasDescription"] = prop_value
+
         base_structure.update(properties)
         return base_structure

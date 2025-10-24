@@ -9,6 +9,7 @@ from grisera.clients.minio_client import MinIOClient
 from data_operations.utils import remove_prefix
 from mongo_service.collection_mapping import Collections
 from .base import BaseEntityConverter
+from ..import_logger import get_import_logger
 
 
 class RegisteredDataConverter(BaseEntityConverter[RegisteredDataIn]):
@@ -183,11 +184,26 @@ class RegisteredDataConverter(BaseEntityConverter[RegisteredDataIn]):
 
         additional_properties = self._set_common_properties(json_entity, registered_data)
 
+        # Szukaj hasName i hasDescription w JSON
+        name_value = self._get_optional_field_value(json_entity, ["hasName", "name"])
+        description_value = self._get_optional_field_value(json_entity, ["hasDescription", "description"])
+
+        get_import_logger().log_info(f'Processing RegisteredData {clean_name_for_log}: name="{name_value}", description="{description_value}"')
+
+        # Jeśli są w JSON, dodaj do additional_properties
+        if name_value:
+            from grisera import PropertyIn
+            additional_properties.append(PropertyIn(key="name", value=name_value))
+
+        if description_value:
+            from grisera import PropertyIn
+            additional_properties.append(PropertyIn(key="description", value=description_value))
+
         if not any(prop.key in ["name", "description"] for prop in additional_properties if hasattr(prop, 'key')):
             from grisera import PropertyIn
             clean_id = remove_prefix(external_id) if external_id else "unknown"
             additional_properties.extend([
-                PropertyIn(key="name", value=clean_id),  # Nazwa na podstawie ID
+                PropertyIn(key="name", value=clean_id),
                 PropertyIn(key="description", value=f"Auto-generated registered data for {clean_id}")
             ])
 
