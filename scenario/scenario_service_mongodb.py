@@ -234,14 +234,19 @@ class ScenarioServiceMongoDB(ScenarioService, GenericMongoServiceMixin):
             return scenario
 
         scenario_dict = self.get_scenario_dict_by_scenario_id(scenario.id, dataset_id)
+        ae_ids_to_delete = []
         for activity_executions_list in scenario_dict["activity_executions"]:
             if scenario_execution_id in activity_executions_list:
+                ae_ids_to_delete = activity_executions_list.copy()
                 scenario_dict["activity_executions"].remove(activity_executions_list)
                 break
 
         self.mongo_api_service.update_document_with_dict(
             Collections.SCENARIO, scenario.id, scenario_dict, dataset_id
         )  # update must be performed with dict, as model is different from saved scenarios (only ae ids are stored)
+
+        for ae_id in ae_ids_to_delete:
+            self.activity_execution_service.delete_activity_execution(ae_id, dataset_id)
 
         return self.get_scenario(scenario.id, dataset_id)
 
