@@ -1,13 +1,15 @@
-from typing import Dict, Any, Optional
 from grisera import ObservableInformationIn
-from .base import BaseEntityConverter, DEBUG
-from .modality_converter import ModalityConverter
-from .life_activity_converter import LifeActivityConverter
-from .recording_converter import RecordingConverter
+from typing import Dict, Any, Optional
 
 from data_operations.utils import remove_prefix
 from mongo_service.collection_mapping import Collections
 from services.mongo_services import MongoServiceFactory
+from .base import BaseEntityConverter, DEBUG
+from .life_activity_converter import LifeActivityConverter
+from .modality_converter import ModalityConverter
+from .recording_converter import RecordingConverter
+from .modality_type_mapper import ModalityTypeMapper
+from ..import_logger import get_import_logger
 
 
 class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn]):
@@ -18,6 +20,8 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
 
     def __init__(self, import_id: str):
         super().__init__(import_id)
+        self.logger = get_import_logger(import_id=import_id, collection=Collections.OBSERVABLE_INFORMATION)
+        self.modality_mapper = ModalityTypeMapper(self.mongo_api_service, self.logger)
         self.modality_service = ModalityConverter(import_id)
         self.life_activity_service = LifeActivityConverter(import_id)
         self.recording_service = RecordingConverter(import_id)
@@ -27,15 +31,16 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
         external_id = self._get_external_id(json_entity)
 
         modality_id = self._extract_modality_id_from_json(json_entity)
-        
+
         life_activity_id = self._extract_life_activity_id_from_json(json_entity)
-        
+
         recording_id = self._extract_recording_id_from_json(json_entity)
-        
+
         clean_name_for_log = remove_prefix(external_id) if external_id else "Unknown"
         if DEBUG:
-            print(f"📝 Creating ObservableInformationIn: name='{clean_name_for_log}', modality_id='{modality_id}', life_activity_id='{life_activity_id}', recording_id='{recording_id}', external_id='{external_id}'")
-        
+            print(
+                f"📝 Creating ObservableInformationIn: name='{clean_name_for_log}', modality_id='{modality_id}', life_activity_id='{life_activity_id}', recording_id='{recording_id}', external_id='{external_id}'")
+
         observable_information = ObservableInformationIn(
             modality_id=modality_id,
             life_activity_id=life_activity_id,
@@ -55,7 +60,7 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
             if DEBUG:
                 print(f"✅ Found simple modality_id: {simple_modality_id}")
             return simple_modality_id
-        
+
         # Następnie sprawdź co:hasModality (zagnieżdżony obiekt)
         for clean_candidate_key in self.JSON_KEY_CANDIDATES_FOR_MODALITY_ID:
             for entity_key_with_prefix, entity_value in json_entity.items():
@@ -66,11 +71,11 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
                             print(f"✅ Found Modality source ID from {entity_key_with_prefix}: {modality_source_id}")
                         # Zapisujemy source ID - mapowanie na MongoDB ID zostanie zrobione później
                         return modality_source_id
-        
+
         if DEBUG:
             print("⚠️ No Modality reference found in ObservableInformation")
         return None
-    
+
     def _extract_life_activity_id_from_json(self, json_entity: Dict[str, Any]) -> Optional[str]:
         """
         Wyciąga LifeActivity ID z JSON z zagnieżdżonej struktury hasLifeActivity.
@@ -81,7 +86,7 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
             if DEBUG:
                 print(f"✅ Found simple life_activity_id: {simple_la_id}")
             return simple_la_id
-        
+
         # Następnie sprawdź co:hasLifeActivity (zagnieżdżony obiekt)
         for clean_candidate_key in self.JSON_KEY_CANDIDATES_FOR_LIFE_ACTIVITY_ID:
             for entity_key_with_prefix, entity_value in json_entity.items():
@@ -93,11 +98,11 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
                             print(f"✅ Found LifeActivity ID from {entity_key_with_prefix}: {life_activity_id}")
                         # Zapisujemy LifeActivity ID - mapowanie na MongoDB ID zostanie zrobione później
                         return life_activity_id
-        
+
         if DEBUG:
             print("⚠️ No LifeActivity reference found in ObservableInformation")
         return None
-    
+
     def _extract_recording_id_from_json(self, json_entity: Dict[str, Any]) -> Optional[str]:
         """
         Wyciąga Recording ID z JSON z zagnieżdżonej struktury hasRecording.
@@ -108,7 +113,7 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
             if DEBUG:
                 print(f"✅ Found simple recording_id: {simple_recording_id}")
             return simple_recording_id
-        
+
         # Następnie sprawdź co:hasRecording (zagnieżdżony obiekt)
         for clean_candidate_key in self.JSON_KEY_CANDIDATES_FOR_RECORDING_ID:
             for entity_key_with_prefix, entity_value in json_entity.items():
@@ -120,12 +125,12 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
                             print(f"✅ Found Recording ID from {entity_key_with_prefix}: {recording_id}")
                         # Zapisujemy Recording ID - mapowanie na MongoDB ID zostanie zrobione później
                         return recording_id
-        
+
         if DEBUG:
             print("⚠️ No Recording reference found in ObservableInformation")
         return None
 
-    def save(self, json_entity: Dict[str, Any], dataset_id: str, import_id: str):# -> ObservableInformationIn:
+    def save(self, json_entity: Dict[str, Any], dataset_id: str, import_id: str):  # -> ObservableInformationIn:
         return self._save_observable_information_with_mapping(self.convert(json_entity), dataset_id, import_id)
 
     def find_by_source_id(self, source_id: str, dataset_id: str) -> str:
@@ -170,6 +175,31 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
             print(f"❌ Error finding ObservableInformation by source_id {source_id}: {e}")
             return ""
 
+    def _find_or_create_modality_by_type_string(
+            self,
+            modality_type_string: str,
+            dataset_id: str,
+            import_id: str = None
+    ) -> Optional[str]:
+        """
+        Szuka modality w MongoDB dopasowując enum Modality.
+        co:modalityFacialExpressions -> szukaj "facial expressions" w polu modality
+        Jeśli nie znalezione -> loguje błąd bez fallback.
+
+        Args:
+            modality_type_string (str): String z JSON-a (np. 'co:modalityFacialExpressions')
+            dataset_id (str): ID datasetu
+            import_id (str): ID importu (opcjonalne, do logowania)
+
+        Returns:
+            Optional[str]: MongoDB ID modality lub None
+        """
+        return self.modality_mapper.map_to_mongodb_id(
+            modality_type_string,
+            dataset_id,
+            import_id,
+            self._log_import_error
+        )
 
     def _save_observable_information_with_mapping(self, grisera_object, dataset_id: str, import_id: str):
         """
@@ -187,14 +217,22 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
                 modality_source_id = str(grisera_object.modality_id)
                 if DEBUG:
                     print(f"🔍 Looking for Modality with source ID: {modality_source_id}")
+                    self.logger.log_info(f'🔍 Looking for Modality with source ID: {modality_source_id}')
                 modality_mongo_id = self.modality_service.find_by_source_id(modality_source_id, dataset_id)
 
                 if modality_mongo_id:
                     mapped_modality_id = modality_mongo_id
                     if DEBUG:
                         print(f"🔗 Mapped modality_id: {grisera_object.modality_id} -> {mapped_modality_id}")
+                        self.logger.log_info(f'🔗 Modality found: {modality_source_id} -> {mapped_modality_id}')
                 else:
-                    print(f"❌ Could not find Modality in MongoDB for source ID: {modality_source_id}")
+                    if DEBUG:
+                        print(f"⚠️ Could not find Modality in MongoDB for source ID: {modality_source_id}")
+                    mapped_modality_id = self._find_or_create_modality_by_type_string(
+                        modality_source_id,
+                        dataset_id,
+                        import_id
+                    )
 
             # 2. Mapuj life_activity_id (opcjonalne)
             mapped_life_activity_id = None
