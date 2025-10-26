@@ -22,6 +22,7 @@ class ActivityExecutionConverter(BaseEntityConverter[ActivityExecutionIn]):
 
     def __init__(self, import_id: str):
         super().__init__(import_id)
+        self.logger = get_import_logger(import_id=import_id, collection=Collections.ACTIVITY_EXECUTION)
         self.activity_service = ActivityConverter(import_id)
         self.arrangement_service = ArrangementConverter(import_id)
         self.services = MongoServiceFactory()
@@ -216,7 +217,7 @@ class ActivityExecutionConverter(BaseEntityConverter[ActivityExecutionIn]):
 
                 arrangement_source_id = grisera_object.arrangement_id
 
-                get_import_logger().log_info(f'🔍 Processing Arrangement ID: {arrangement_source_id} for ActivityExecution {source_entity_ref}')
+                self.logger.log_info(f'🔍 Processing Arrangement ID: {arrangement_source_id} for ActivityExecution {source_entity_ref}')
 
                 if arrangement_source_id:
                     arrangement_mongo_id = self.arrangement_service.find_by_source_id(grisera_object.arrangement_id, dataset_id)

@@ -6,9 +6,10 @@ from mongo_service.collection_mapping import Collections
 from services.mongo_services import MongoServiceFactory
 from .base import BaseEntityConverter, DEBUG
 from .life_activity_converter import LifeActivityConverter
+from .life_activity_type_mapper import LifeActivityTypeMapper
 from .modality_converter import ModalityConverter
-from .recording_converter import RecordingConverter
 from .modality_type_mapper import ModalityTypeMapper
+from .recording_converter import RecordingConverter
 from ..import_logger import get_import_logger
 
 
@@ -22,6 +23,7 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
         super().__init__(import_id)
         self.logger = get_import_logger(import_id=import_id, collection=Collections.OBSERVABLE_INFORMATION)
         self.modality_mapper = ModalityTypeMapper(self.mongo_api_service, self.logger)
+        self.life_activity_mapper = LifeActivityTypeMapper(self.mongo_api_service, self.logger)
         self.modality_service = ModalityConverter(import_id)
         self.life_activity_service = LifeActivityConverter(import_id)
         self.recording_service = RecordingConverter(import_id)
@@ -201,6 +203,32 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
             self._log_import_error
         )
 
+    def _find_or_create_life_activity_by_type_string(
+            self,
+            life_activity_type_string: str,
+            dataset_id: str,
+            import_id: str = None
+    ) -> Optional[str]:
+        """
+        Szuka life_activity w MongoDB dopasowując enum LifeActivity.
+        co:lifeActivityMovement -> szukaj "movement" w polu life_activity
+        Jeśli nie znalezione -> loguje błąd bez fallback.
+
+        Args:
+            life_activity_type_string (str): String z JSON-a (np. 'co:lifeActivityMovement')
+            dataset_id (str): ID datasetu
+            import_id (str): ID importu (opcjonalne, do logowania)
+
+        Returns:
+            Optional[str]: MongoDB ID life_activity lub None
+        """
+        return self.life_activity_mapper.map_to_mongodb_id(
+            life_activity_type_string,
+            dataset_id,
+            import_id,
+            self._log_import_error
+        )
+
     def _save_observable_information_with_mapping(self, grisera_object, dataset_id: str, import_id: str):
         """
         Zapisuje ObservableInformation z mapowaniem source IDs na MongoDB IDs.
@@ -240,6 +268,7 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
                 life_activity_source_id = str(grisera_object.life_activity_id)
                 if DEBUG:
                     print(f"🔍 Looking for LifeActivity with source ID: {life_activity_source_id}")
+                    self.logger.log_info(f'🔍 Looking for LifeActivity with source ID: {life_activity_source_id}')
                 life_activity_mongo_id = self.life_activity_service.find_by_source_id(life_activity_source_id, dataset_id)
 
                 if life_activity_mongo_id:
@@ -247,8 +276,16 @@ class ObservableInformationConverter(BaseEntityConverter[ObservableInformationIn
                     if DEBUG:
                         print(
                             f"🔗 Mapped life_activity_id: {grisera_object.life_activity_id} -> {mapped_life_activity_id}")
+                        self.logger.log_info(
+                            f'🔗 Mapped life_activity_id: {grisera_object.life_activity_id} -> {mapped_life_activity_id}')
                 else:
-                    print(f"❌ Could not find LifeActivity in MongoDB for source ID: {life_activity_source_id}")
+                    if DEBUG:
+                        print(f"⚠️ Could not find LifeActivity in MongoDB for source ID: {life_activity_source_id}")
+                    mapped_life_activity_id = self._find_or_create_life_activity_by_type_string(
+                        life_activity_source_id,
+                        dataset_id,
+                        import_id
+                    )
 
             mapped_recording_id = None
             if grisera_object.recording_id:

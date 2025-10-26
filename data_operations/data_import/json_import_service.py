@@ -2,6 +2,7 @@ from typing import Union, List, Dict, Any, Set
 import json
 from datetime import datetime
 
+from data_operations.import_logger import get_import_logger
 from data_operations.utils import decode_file_content, remove_prefix
 from data_operations.converters import ENTITY_CONVERTERS, BaseEntityConverter
 from data_operations.entity_type_mapping import EntityTypeMapping
@@ -42,6 +43,7 @@ class JsonImportService:
     """
 
     def __init__(self):
+        self.logger = None
         self.mongo_api_service = MongoApiService()
         self.services = MongoServiceFactory()
         self.file_ops_service = FileOperationsStatusService()
@@ -55,11 +57,13 @@ class JsonImportService:
         print("🔧 JsonImportService initialized with ExperimentScenariosBuilder")
 
     def import_json_data(self, import_data: FileOperationIn, import_id: str) -> int:
+        self.logger = get_import_logger(import_id=import_id)
         """
         Importuje dane JSON zgodnie z instrukcją ontologiczną
         Returns: liczba zaimportowanych rekordów
         """
         print(f"📄 Starting JSON data import for import ID: {import_id}")
+        self.logger.log_info(f'📄 Starting JSON data import for import ID: {import_id}')
         processed_ids: Set[str] = set()
         total_imported = 0
 
@@ -108,6 +112,7 @@ class JsonImportService:
                 # Szukaj klucza w JSON, który po usunięciu prefiksu pasuje do entity_type.json_name
                 matched_json_key = None
                 for json_key in json_data.keys():
+                    self.logger.log_info(f'🔍 Checking JSON key: {json_key}')
                     normalized_key = remove_prefix(json_key)
                     if normalized_key == entity_type.json_name:
                         matched_json_key = json_key
@@ -128,6 +133,7 @@ class JsonImportService:
                         continue
 
                     print(f"✅ Found {len(entity_list)} entities of type {entity_type.json_name}")
+                    self.logger.log_info(f'✅ Found {len(entity_list)} entities of type {entity_type.json_name}')
                     try:
                         imported_count = self._process_entity_list(
                             entity_list,
@@ -139,9 +145,11 @@ class JsonImportService:
                         total_imported += imported_count
                         print(
                             f"📈 Imported {imported_count} entities of type {entity_type.json_name}. Total: {total_imported}")
+                        self.logger.log_info(f'📈 Imported {imported_count} entities of type {entity_type.json_name}. Total: {total_imported}')
 
                     except Exception as e:
                         print(f"❌ Error processing {matched_json_key}: {str(e)}")
+                        self.logger.log_error(f'❌ Error processing {matched_json_key}: {str(e)}')
                         self._log_import_error(
                             import_id,
                             import_data.dataset_id,

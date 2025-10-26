@@ -1,10 +1,8 @@
+from grisera import RegisteredDataIn
+from grisera.clients.minio_client import MinIOClient
 from typing import Dict, Any
 from typing import Dict, Any, Optional
 from uuid import uuid4
-
-from grisera import RegisteredDataIn
-from .base import BaseEntityConverter, DEBUG
-from grisera.clients.minio_client import MinIOClient
 
 from data_operations.utils import remove_prefix
 from mongo_service.collection_mapping import Collections
@@ -18,6 +16,7 @@ class RegisteredDataConverter(BaseEntityConverter[RegisteredDataIn]):
 
     def __init__(self, import_id: str):
         super().__init__(import_id)
+        self.logger = get_import_logger(import_id=import_id, collection=Collections.REGISTERED_DATA)
         self._current_dataset_id = None  # Store dataset_id for use in convert()
 
         # Initialize file services for file operations
@@ -188,7 +187,7 @@ class RegisteredDataConverter(BaseEntityConverter[RegisteredDataIn]):
         name_value = self._get_optional_field_value(json_entity, ["hasName", "name"])
         description_value = self._get_optional_field_value(json_entity, ["hasDescription", "description"])
 
-        get_import_logger().log_info(f'Processing RegisteredData {clean_name_for_log}: name="{name_value}", description="{description_value}"')
+        self.logger.log_info(f'Processing RegisteredData {clean_name_for_log}: name="{name_value}", description="{description_value}"')
 
         # Jeśli są w JSON, dodaj do additional_properties
         if name_value:
@@ -212,7 +211,8 @@ class RegisteredDataConverter(BaseEntityConverter[RegisteredDataIn]):
         self._add_remaining_properties(json_entity, additional_properties, processed_clean_keys)
 
         clean_name_for_log = remove_prefix(external_id) if external_id else "Unknown"
-        print(f"📝 Creating RegisteredDataIn: name='{clean_name_for_log}', source='{source}', external_id='{registered_data.external_id}', import_job_id='{registered_data.import_job_id}', properties={len(additional_properties)} (including common)")
+        print(
+            f"📝 Creating RegisteredDataIn: name='{clean_name_for_log}', source='{source}', external_id='{registered_data.external_id}', import_job_id='{registered_data.import_job_id}', properties={len(additional_properties)} (including common)")
         registered_data.additional_properties = additional_properties
         return registered_data
 
@@ -223,5 +223,3 @@ class RegisteredDataConverter(BaseEntityConverter[RegisteredDataIn]):
 
     def find_by_source_id(self, source_id: str, dataset_id: str) -> str:
         return self._find_by_source_id(source_id, dataset_id, Collections.REGISTERED_DATA)
-
-
