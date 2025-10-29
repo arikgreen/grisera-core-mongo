@@ -166,10 +166,11 @@ class TimeSeriesConverter(BaseEntityConverter[TimeSeriesIn]):
             # File found - copy it to new location
             new_object_name = self._copy_existing_file(existing_object_name, filename, dataset_id)
             return new_object_name
-        else:
-            # File not found - create default placeholder
-            default_object_name = self._create_default_file(source, filename, dataset_id)
-            return default_object_name
+        # else:
+        #     # File not found - create default placeholder
+        #     default_object_name = self._create_default_file(source, filename, dataset_id)
+        #     return default_object_name
+        return None
 
     def convert(self, json_entity: Dict[str, Any]) -> TimeSeriesIn:
         external_id = self._get_external_id(json_entity)
