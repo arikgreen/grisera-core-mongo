@@ -231,3 +231,23 @@ class ActivityServiceMongoDB(ActivityService, GenericMongoServiceMixin):
                 self.activity_execution_service._add_related_documents(
                     ae, dataset_id, depth - 1, Collections.ACTIVITY, activity
                 )
+
+    def search_activities_in_dataset(self, dataset_id: Union[int, str], text: str, limit: int = 10, offset: int = 0):
+        """
+        Search activities in dataset by text
+
+        Args:
+            dataset_id (int | str): name of dataset
+            text (str): text to search for
+            limit (int): maximum number of results to return
+            offset (int): number of results to skip
+
+        Returns:
+            Result of request as list of activity objects
+        """
+        query = {
+            "$text": {"$search": text}
+        }
+        results_dict = self.get_multiple(dataset_id, query, limit=limit, offset=offset)
+        activities = [BasicActivityOut(**result) for result in results_dict]
+        return ActivitiesOut(activities=activities)

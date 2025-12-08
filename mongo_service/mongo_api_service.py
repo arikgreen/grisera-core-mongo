@@ -633,3 +633,33 @@ class MongoApiService:
             db[Collections.PARTICIPANT].aggregate(aggregation)
         )
         return aggregation_result[0]["tsIds"] if len(aggregation_result) else []
+
+    def search_documents(
+        self,
+        collection_name: str,
+        dataset_id: Union[int, str],
+        search_text: str,
+        *args,
+        **kwargs,
+    ):
+        """
+        Search documents in collection by text
+
+        Args:
+            collection_name: name of collection
+            dataset_id (int | str): name of dataset
+            search_text: Text to be searched for
+
+        Returns:
+            Result of request as list of dictionaries
+        """
+        db = self.client[dataset_id]
+        results = list(
+            db[collection_name].find(
+                {"$text": {"$search": search_text}}, *args, **kwargs
+            )
+        )
+
+        [self._update_mongo_output_id(result) for result in results]
+
+        return results

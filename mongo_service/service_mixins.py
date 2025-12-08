@@ -160,3 +160,34 @@ class GenericMongoServiceMixin:
 
         self.mongo_api_service.delete_document(existing_document, dataset_id)
         return existing_document
+
+    def search(
+        self,
+        dataset_id: Union[int, str],
+        search_text: str,
+        depth: int = 0,
+        source: str = "",
+        *args,
+        **kwargs,
+    ):
+        """
+        Generic method for searching documents in mongo api
+
+        Args:
+            dataset_id (int | str): name of dataset
+            search_text: Text to be searched for
+            depth: This specifies the number of collections that are to be traversed
+            source: Helper arguments that specifies direction of collection traversion
+
+        Returns:
+            Result of request as list of dictionaries
+        """
+        collection_name = get_collection_name(self.model_out_class)
+        results_dict = self.mongo_api_service.search_documents(
+            collection_name, dataset_id, search_text, *args, **kwargs
+        )
+
+        for result in results_dict:
+            self._add_related_documents(result, dataset_id, depth, source)
+
+        return results_dict
