@@ -30,6 +30,19 @@ from grisera import dataset_router
 from data_operations.data_import.data_import_router import data_import_router
 from data_operations.data_export.data_export_router import data_export_router
 
+# Define the origins that are allowed to make requests
+origins = [
+    "http://localhost:3000",  # Your frontend development server
+    "http://localhost:8085",  # API server URL
+    "http://localhost:8081",  # Auth server URL
+    "http://localhost:8090",  # Keycloak server URL
+
+    "https://ui.grisera2.affectivese.org",  # Production frontend URL
+    "https://backend.grisera2.affectivese.org",  # Production API server URL
+    "https://authms.grisera2.affectivese.org",  # Production Auth server URL
+    "https://idp.grisera2.affectivese.org",  # Production Keycloak server URL
+]
+
 app = FastAPI(
     title="GRISERA API",
     description="Graph Representation Integrating Signals for Emotion Recognition and Analysis (GRISERA) "
@@ -41,7 +54,7 @@ app = FastAPI(
 app.add_middleware(
     # to allow frontend and backend to be hosted on different domains (e.g., localhost:3000 for frontend and localhost:8000 for backend)
     CORSMiddleware,
-    allow_origins=["*"],  # or restrict to specific domains in production
+    allow_origins=origins,  # or restrict to specific domains in production
     allow_credentials=True,
     allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
     allow_headers=["Authorization", "Content-Type"],  # Allow specific headers including Authorization ["Authorization", "Content-Type"]
@@ -76,7 +89,6 @@ app.include_router(data_import_router)
 app.include_router(data_export_router)
 
 app.dependency_overrides[service.get_service_factory] = mongo_service.get_service_factory
-
 
 
 @app.get("/", tags=["root"])
