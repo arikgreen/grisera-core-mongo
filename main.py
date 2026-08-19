@@ -37,6 +37,11 @@ origins = [
     "http://localhost:8081",  # Auth server URL
     "http://localhost:8090",  # Keycloak server URL
 
+    "https://app.grisera.localhost",  # Local HTTPS frontend (Caddy)
+    "https://api.grisera.localhost",  # Local HTTPS API server (Caddy)
+    "https://auth.grisera.localhost",  # Local HTTPS Auth server (Caddy)
+    "https://kc.grisera.localhost",  # Local HTTPS Keycloak (Caddy)
+
     "https://ui.grisera2.affectivese.org",  # Production frontend URL
     "https://backend.grisera2.affectivese.org",  # Production API server URL
     "https://authms.grisera2.affectivese.org",  # Production Auth server URL
