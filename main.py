@@ -26,6 +26,7 @@ from grisera import scenario_router
 from grisera import measure_name_router
 from grisera import channel_router
 from grisera import dataset_router
+from grisera import search_router
 
 from data_operations.data_import.data_import_router import data_import_router
 from data_operations.data_export.data_export_router import data_export_router
@@ -88,6 +89,7 @@ app.include_router(registered_data_router)
 app.include_router(scenario_router)
 app.include_router(time_series_router)
 app.include_router(dataset_router)
+app.include_router(search_router)
 
 # Dodanie routerów do importu i eksportu danych
 app.include_router(data_import_router)

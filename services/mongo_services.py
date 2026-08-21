@@ -28,6 +28,7 @@ from registered_channel.registered_channel_service_mongodb import (
     RegisteredChannelServiceMongoDB,
 )
 from registered_data.registered_data_service_mongodb import RegisteredDataServiceMongoDB
+from search.search_service_mongodb import SearchServiceMongoDB
 from time_series.time_series_service_mongodb import TimeSeriesServiceMongoDB
 from file.file_service_mongodb import FileServiceMongoDB
 from grisera import ActivityService
@@ -54,6 +55,7 @@ from grisera import RegisteredDataService
 from grisera import ScenarioService
 from grisera import TimeSeriesService
 from grisera import DatasetService
+from grisera import SearchService
 from grisera.file.file_service import FileService
 
 
@@ -82,6 +84,7 @@ class MongoServiceFactory(ServiceFactory):
         self.experiment_service = ExperimentServiceMongoDB()
         self.scenario_service = ScenarioServiceMongoDB()
         self.file_service = FileServiceMongoDB()
+        self.search_service = SearchServiceMongoDB()
 
         service_pairs = [
             ("registered_channel", "channel"),
@@ -167,6 +170,9 @@ class MongoServiceFactory(ServiceFactory):
 
     def get_scenario_service(self) -> ScenarioService:
         return self.scenario_service
+
+    def get_search_service(self) -> SearchService:
+        return self.search_service
 
     def get_time_series_service(self) -> TimeSeriesService:
         return self.time_series_service
